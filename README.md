@@ -29,6 +29,22 @@
 
 * 每一步计算需要替换bucket的次数应该是随着iteration的增长逐渐减少的。是否能够根据iteration需要替换的bucket个数做不同的计算方法。
 
+### 单机多线程版本结构
+Vertex
+* (Net)告知别的节点自己属于哪个bucket
+* (Local)计算对每个bucket的move gain
+* (Net)发送自己的target给master
+* (Net)接受master发送回来的转移概率
+
+Master
+* (Net)接受节点发送来的target
+* (Local)汇总成矩阵S
+* (Local)计算每个节点的转移概率
+* (Net)发送转移概率给每个节点
+
+Bucket
+* (Net)进行节点转移
+
 ### todo-list
 - [ ] 实现串行算法
 - [ ] 实现单机线程级并行算法

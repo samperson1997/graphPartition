@@ -12,7 +12,7 @@ import (
 func loadGraph(path string) (c pt.Config) {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Printf("err=%v", err)
+		fmt.Printf(err)
 		return
 	}
 	defer file.Close()
@@ -29,6 +29,10 @@ func loadGraph(path string) (c pt.Config) {
 			break
 		}
 		fmt.Fscanf(strings.NewReader(str), "%d %d", &src, &dst)
+		if src < 0 || src >= c.VertexSize || dst < 0 || dst >= c.VertexSize {
+			fmt.Println("err in edge with src: ", src, " dst: ", dst, "vertexSize ", c.VertexSize)
+			return
+		}
 		c.Graph.AddEdge(src, dst)
 		c.Graph.AddEdge(dst, src)
 	}
@@ -44,7 +48,7 @@ func main() {
 	shp.InitBucket()
 	maxIteration := 100
 	for i := 0; i < maxIteration; i++ {
-		pt.NextIterationParallel(shp)
+		pt.NextIteration(shp)
 	}
 	shp.PrintResult()
 }

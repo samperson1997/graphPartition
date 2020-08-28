@@ -26,8 +26,6 @@ type SHPImpl struct {
 	vertexSize uint64
 	prob       float64
 
-	buckets []bucket
-
 	//vertex2Bucket
 	vertex2Bucket []uint64
 	vertex2Target []uint64
@@ -201,15 +199,16 @@ func (shp *SHPImpl) SetNewParallel() {
 }
 
 // SetNew check bucket to set
-func (shp *SHPImpl) SetNew() {
-
+func (shp *SHPImpl) SetNew() (ret bool) {
+	ret = false
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
 		if shp.vertex2Target[vertex] != shp.vertex2Bucket[vertex] &&
 			rand.Float64() < shp.probability[shp.vertex2Bucket[vertex]][shp.vertex2Target[vertex]] {
 			shp.vertex2Bucket[vertex] = shp.vertex2Target[vertex]
+			ret = true
 		}
 	}
-
+	return
 }
 
 // PrintResult print all result
@@ -249,10 +248,10 @@ func (shp *SHPImpl) CalcFanout() (fanout float64) {
 }
 
 // NextIteration calc a iteration
-func NextIteration(shp *SHPImpl) {
+func NextIteration(shp *SHPImpl) bool {
 	shp.ComputMoveGain()
 	shp.ComputMoveProb()
-	shp.SetNew()
+	return shp.SetNew()
 }
 
 // NextIterationParallel process a iteration with a iteration

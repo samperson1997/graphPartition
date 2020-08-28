@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"runtime"
+	"sync/atomic"
 )
 
 type bucket struct {
@@ -98,7 +99,7 @@ func (shp *SHPImpl) computMoveGainSegment(begin, end uint64) {
 		}
 		if minGain < 0 {
 			shp.vertex2Target[vertex] = target
-			shp.vertexTrans[preBucket][target]++
+			atomic.AddUint64(&shp.vertexTrans[preBucket][target], 1)
 		}
 	}
 }

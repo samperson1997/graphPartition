@@ -42,9 +42,9 @@ func main() {
 
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
-	maxIteration := 1000
+	maxIteration := 100
 	for i := 0; i < maxIteration; i++ {
-		pt.NextIteration(shp)
+		pt.NextIterationParallel(shp)
 	}
 	shp.PrintResult()
 }

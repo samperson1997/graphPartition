@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"runtime"
 )
 
 type bucket struct {
@@ -80,6 +81,42 @@ func (shp *SHPImpl) calcSingleGain(node *Node) (gains []float64) {
 	return
 }
 
+func (shp *SHPImpl) computMoveGainSegment(begin, end uint64) {
+	for vertex := begin; vertex != end; vertex++ {
+		minGain := math.MaxFloat64
+		preBucket := shp.vertex2Bucket[vertex]
+		shp.vertex2Target[vertex] = preBucket
+		target := preBucket
+		gains := shp.calcSingleGain(shp.graph.nodes[vertex])
+		for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
+
+			gain := gains[bucketI]
+			if gain < minGain {
+				minGain = gain
+				target = bucketI
+			}
+		}
+		if minGain < 0 {
+			shp.vertex2Target[vertex] = target
+			shp.vertexTrans[preBucket][target]++
+		}
+	}
+}
+
+// ComputMoveGainParallel parallel compute maxgain of each vertex
+func (shp *SHPImpl) ComputMoveGainParallel() {
+	for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
+		for bucketJ := uint64(0); bucketJ < shp.bucketSize; bucketJ++ {
+			shp.vertexTrans[bucketI][bucketJ] = 0
+		}
+	}
+	parallel := uint64(runtime.NumCPU())
+	segmentVertexSize := (shp.vertexSize + parallel - 1) / parallel
+	for beginvertex := uint64(0); beginvertex < shp.vertexSize; beginvertex += segmentVertexSize {
+		go shp.computMoveGainSegment(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
+	}
+}
+
 // InitBucket set every vertex a init bucket
 func (shp *SHPImpl) InitBucket() {
 	for i := uint64(0); i < shp.vertexSize; i++ {
@@ -108,11 +145,9 @@ func (shp *SHPImpl) ComputMoveGain() {
 			}
 		}
 		if minGain < 0 {
-
 			shp.vertex2Target[vertex] = target
 			shp.vertexTrans[preBucket][target]++
 		}
-
 	}
 }
 
@@ -128,6 +163,27 @@ func (shp *SHPImpl) ComputMoveProb() {
 			}
 		}
 	}
+}
+
+func (shp *SHPImpl) setNewSegment(begin, end uint64) {
+	for vertex := begin; vertex != end; vertex++ {
+		if shp.vertex2Target[vertex] != shp.vertex2Bucket[vertex] &&
+			rand.Float64() < shp.probability[shp.vertex2Bucket[vertex]][shp.vertex2Target[vertex]] {
+			shp.vertex2Bucket[vertex] = shp.vertex2Target[vertex]
+		}
+	}
+}
+
+// SetNewParallel parallel check bucket to set
+func (shp *SHPImpl) SetNewParallel() {
+	parallel := uint64(runtime.NumCPU())
+	// fmt.Println("parallel with ", parallel, "cpu")
+	segmentVertexSize := (shp.vertexSize + parallel - 1) / parallel
+	for beginvertex := uint64(0); beginvertex < shp.vertexSize; beginvertex += segmentVertexSize {
+		go shp.setNewSegment(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
+
+	}
+
 }
 
 // SetNew check bucket to set
@@ -170,6 +226,7 @@ func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
 	return
 }
 
+// CalcFanout for test
 func (shp *SHPImpl) CalcFanout() (fanout float64) {
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
 		fanout += shp.calcSingleFanout(vertex)
@@ -182,4 +239,11 @@ func NextIteration(shp *SHPImpl) {
 	shp.ComputMoveGain()
 	shp.ComputMoveProb()
 	shp.SetNew()
+}
+
+// NextIterationParallel process a iteration with a iteration
+func NextIterationParallel(shp *SHPImpl) {
+	shp.ComputMoveGainParallel()
+	shp.ComputMoveProb()
+	shp.SetNewParallel()
 }

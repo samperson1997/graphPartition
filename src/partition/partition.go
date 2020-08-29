@@ -178,9 +178,11 @@ func (shp *SHPImpl) setNewSegment(begin, end uint64) {
 }
 
 // SetNewParallel parallel check bucket to set
-func (shp *SHPImpl) SetNewParallel() {
+func (shp *SHPImpl) SetNewParallel() (ret bool) {
 	parallel := uint64(runtime.NumCPU())
 	// fmt.Println("parallel with ", parallel, "cpu")
+	var isSet atomic.Value
+	isSet.Store(false)
 	segmentVertexSize := (shp.vertexSize + parallel - 1) / parallel
 	var wg sync.WaitGroup
 	for beginvertex := uint64(0); beginvertex < shp.vertexSize; beginvertex += segmentVertexSize {
@@ -191,11 +193,13 @@ func (shp *SHPImpl) SetNewParallel() {
 				if shp.vertex2Target[vertex] != shp.vertex2Bucket[vertex] &&
 					rand.Float64() < shp.probability[shp.vertex2Bucket[vertex]][shp.vertex2Target[vertex]] {
 					shp.vertex2Bucket[vertex] = shp.vertex2Target[vertex]
+					isSet.Store(true)
 				}
 			}
 		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
+	return isSet.Load().(bool)
 }
 
 // SetNew check bucket to set
@@ -255,8 +259,8 @@ func NextIteration(shp *SHPImpl) bool {
 }
 
 // NextIterationParallel process a iteration with a iteration
-func NextIterationParallel(shp *SHPImpl) {
+func NextIterationParallel(shp *SHPImpl) bool {
 	shp.ComputMoveGainParallel()
 	shp.ComputMoveProb()
-	shp.SetNewParallel()
+	return shp.SetNewParallel()
 }

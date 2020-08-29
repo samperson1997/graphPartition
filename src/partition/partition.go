@@ -12,6 +12,16 @@ import (
 type bucket struct {
 }
 
+type transfer struct {
+	from uint64
+	to   uint64
+}
+
+type transferNeed struct {
+	buffer     []uint64
+	bufferSize int64
+}
+
 // Config SHPImpl config
 type Config struct {
 	VertexSize uint64
@@ -33,6 +43,7 @@ type SHPImpl struct {
 	probability [][]float64
 	vertexTrans [][]uint64
 
+	tf transferNeed
 	// graph manage all graph data
 	graph *Graph
 }
@@ -47,6 +58,8 @@ func NewSHPImpl(c Config) *SHPImpl {
 		vertexSize:    c.VertexSize,
 		prob:          c.Prob,
 	}
+	shp.tf.buffer = make([]uint64, c.VertexSize)
+	shp.tf.bufferSize = 0
 	shp.probability = make([][]float64, c.BucketSize)
 	shp.vertexTrans = make([][]uint64, c.BucketSize)
 	b := c.BucketSize

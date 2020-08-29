@@ -47,3 +47,19 @@ func BenchmarkSHPParallel(b *testing.B) {
 		},
 	)
 }
+func BenchmarkSHPWithBufferParallel(b *testing.B) {
+	config := pt.LoadGraph("test_data/youtube.in", 5)
+	b.Run(
+		"social hash Parallel",
+		func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				shp := pt.NewSHPImpl(config)
+				b.StartTimer()
+				shp.InitBucket()
+				for pt.NextIterationWithBufferParallel(shp) {
+				}
+				b.StopTimer()
+			}
+		},
+	)
+}

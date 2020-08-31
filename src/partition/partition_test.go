@@ -1,6 +1,7 @@
 package partition_test
 
 import (
+	"fmt"
 	"testing"
 
 	pt "gpartition/partition"
@@ -12,6 +13,16 @@ func TestFanout(t *testing.T) {
 	shp := pt.NewSHPImpl(config)
 	pt.NextIteration(shp)
 	shp.CalcFanout()
+}
+func TestFanoutChange(t *testing.T) {
+	config := pt.LoadGraph("test_data/youtube.in", 5)
+	shp := pt.NewSHPImpl(config)
+	shp.InitBucket()
+
+	fmt.Println(int(shp.CalcFanout()))
+	for pt.NextIteration(shp) {
+	}
+	fmt.Println(int(shp.CalcFanout()))
 }
 
 //BenchmarkSHP a benchmark demo

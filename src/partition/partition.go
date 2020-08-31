@@ -236,8 +236,25 @@ func (shp *SHPImpl) PrintResult() {
 	}
 
 }
-
 func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
+	ns := make([]uint64, shp.bucketSize)
+	fanout = 0
+
+	for nbr := shp.graph.nodes[vertex].nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
+		u := nbr.Value.(nbrNode).id
+		uBucket := shp.vertex2Bucket[u]
+		ns[uBucket]++
+	}
+	for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
+		if bucketI == shp.vertex2Bucket[vertex] {
+			fanout += float64(ns[bucketI])
+		} else {
+			fanout += float64(ns[bucketI]) * 2
+		}
+	}
+	return
+}
+func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
 

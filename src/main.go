@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	config := pt.LoadGraph("youtube.in", 5)
+	config := pt.LoadGraph("data.in", 5)
 
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()

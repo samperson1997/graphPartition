@@ -68,7 +68,7 @@ func (shp *SHPImpl) ComputMoveGainWithBufferParallel() {
 				preBucket := shp.vertex2Bucket[vertex]
 				shp.vertex2Target[vertex] = preBucket
 				target := preBucket
-				gains := shp.calcSingleGain(shp.graph.nodes[vertex])
+				gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
 				for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
 
 					gain := gains[bucketI]
@@ -102,7 +102,7 @@ func (shp *SHPImpl) ComputMoveGainWithBuffer() {
 		preBucket := shp.vertex2Bucket[vertex]
 		shp.vertex2Target[vertex] = preBucket
 		target := preBucket
-		gains := shp.calcSingleGain(shp.graph.nodes[vertex])
+		gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
 		for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
 			gain := gains[bucketI]
 			if gain < minGain {

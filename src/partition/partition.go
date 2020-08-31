@@ -80,8 +80,8 @@ func (shp *SHPImpl) calcSingleGain(node *Node) (gains []float64) {
 
 	vertex := node.id
 	total := 0
-	for nbr := node.nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(nbrNode).id
+	for nbr := node.Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
+		u := nbr.Value.(NbrNode).Id
 		uBucket := shp.vertex2Bucket[u]
 		ns[uBucket]++
 		total++
@@ -114,7 +114,7 @@ func (shp *SHPImpl) ComputMoveGainParallel() {
 				preBucket := shp.vertex2Bucket[vertex]
 				shp.vertex2Target[vertex] = preBucket
 				target := preBucket
-				gains := shp.calcSingleGain(shp.graph.nodes[vertex])
+				gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
 				for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
 
 					gain := gains[bucketI]
@@ -152,7 +152,7 @@ func (shp *SHPImpl) ComputMoveGain() {
 		preBucket := shp.vertex2Bucket[vertex]
 		shp.vertex2Target[vertex] = preBucket
 		target := preBucket
-		gains := shp.calcSingleGain(shp.graph.nodes[vertex])
+		gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
 		for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
 			gain := gains[bucketI]
 			if gain < minGain {
@@ -240,8 +240,8 @@ func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
 
-	for nbr := shp.graph.nodes[vertex].nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(nbrNode).id
+	for nbr := shp.graph.Nodes[vertex].Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
+		u := nbr.Value.(NbrNode).Id
 		uBucket := shp.vertex2Bucket[u]
 		ns[uBucket]++
 	}
@@ -258,8 +258,8 @@ func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
 
-	for nbr := shp.graph.nodes[vertex].nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(nbrNode).id
+	for nbr := shp.graph.Nodes[vertex].Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
+		u := nbr.Value.(NbrNode).Id
 		uBucket := shp.vertex2Bucket[u]
 		ns[uBucket]++
 	}

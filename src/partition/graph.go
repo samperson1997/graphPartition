@@ -1,47 +1,57 @@
 package partition
 
-import "container/list"
+import (
+	"container/list"
+	"math"
+)
 
-// Graph manage nodes
+// Graph manage Nodes
 type Graph struct {
-	nodes []*Node
+	Nodes []*Node
 }
 
 // NewGraph return a empty graph with vertexSize vertex
 func NewGraph(vertexSize int) *Graph {
 	g := Graph{
-		nodes: make([]*Node, vertexSize),
+		Nodes: make([]*Node, vertexSize),
 	}
 	for i := 0; i < vertexSize; i++ {
-		g.nodes[i] = NewNode(uint64(i))
+		g.Nodes[i] = NewNode(uint64(i))
 	}
 	return &g
 }
 
 // AddEdge Add edge from src to dst
 func (g *Graph) AddEdge(src, dst uint64) {
-	g.nodes[src].addNbr(dst)
+	g.Nodes[src].addNbr(dst)
 }
 
-type nbrNode struct {
-	id uint64
+func (g *Graph) ChangeColor(id, color uint64) {
+	g.Nodes[id].Color = color
 }
 
-// Node a vertex and nbrlist
+type NbrNode struct {
+	Id uint64
+}
+
+// Node a vertex and Nbrlist
 type Node struct {
 	id      uint64
-	nbrlist *list.List
+	Nbrlist *list.List
+	Color   uint64
 }
 
 // NewNode returns a node with id and empty list
 func NewNode(id uint64) *Node {
 	n := Node{
 		id:      id,
-		nbrlist: list.New(),
+		Nbrlist: list.New(),
+		Color:   math.MaxUint64,
 	}
-	n.nbrlist.Init()
+	n.Nbrlist.Init()
 	return &n
 }
+
 func (n *Node) addNbr(id uint64) {
-	n.nbrlist.PushBack(nbrNode{id})
+	n.Nbrlist.PushBack(NbrNode{id})
 }

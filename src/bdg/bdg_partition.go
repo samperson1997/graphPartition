@@ -7,7 +7,6 @@ import (
 	"math"
 	"math/rand"
 	"sort"
-	"time"
 )
 
 type BDGConfig struct {
@@ -73,13 +72,21 @@ func (bdg *BDGImpl) bfs() {
 	var queue = list.New()
 	queue.Init()
 
+	chosenSrc := make(map[uint64]bool, bdg.blockSize)
+
 	// add random source nodes to blocks and change color
 	for i := uint64(0); i < bdg.blockSize; i++ {
-		rand.Seed(time.Now().UnixNano())
 		srcId := uint64(rand.Intn(int(bdg.vertexSize)))
+		_, ok := chosenSrc[srcId]
+		if ok {
+			i--
+			continue
+		}
+		chosenSrc[srcId] = true
 		queue.PushBack(srcId)
 		bdg.graph.ChangeColor(srcId, i)
 		bdg.blocks[i] = NewBlock(i)
+		bdg.blocks[i].nodes.PushBack(srcId)
 	}
 
 	for queue.Len() > 0 {
@@ -108,7 +115,7 @@ func (bdg *BDGImpl) bfs() {
 
 // deterministicGreedy deterministic greedy strategy
 func (bdg *BDGImpl) deterministicGreedy() {
-	// print blocks info
+	// ===== print blocks info ======
 	for k, v := range bdg.blocks {
 		fmt.Print("Key:", k, ",nodes:", v.nodes.Len(), "(")
 		for node := v.nodes.Front(); node != nil; node = node.Next() {
@@ -122,6 +129,8 @@ func (bdg *BDGImpl) deterministicGreedy() {
 		fmt.Println()
 		fmt.Println("=======")
 	}
+	// ====== end print ======
+
 	// sort buckets by nodes size
 	sortedBlocks := sortBlocksByNodesNum(bdg.blocks)
 

@@ -82,10 +82,9 @@ func NewSHPImpl(c Config) *SHPImpl {
 func (shp *SHPImpl) calcSingleGain(node *Node) (gains []float64) {
 	gains = make([]float64, shp.bucketSize)
 	vertex := node.id
-	for nbr := node.Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(NbrNode).Id
+	for _, nbrNode := range node.Nbrlist {
 		uBucket := shp.vertex2Bucket[node.id]
-		nb := shp.nbrBucket[u]
+		nb := shp.nbrBucket[nbrNode]
 		for bucketJ := uint64(0); bucketJ < shp.bucketSize; bucketJ++ {
 			if bucketJ != shp.vertex2Bucket[vertex] {
 				gains[bucketJ] += math.Pow(1-shp.prob, float64(nb[bucketJ])) - math.Pow(1-shp.prob, float64(nb[uBucket]-1))
@@ -243,9 +242,8 @@ func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
 
-	for nbr := shp.graph.Nodes[vertex].Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(NbrNode).Id
-		uBucket := shp.vertex2Bucket[u]
+	for _, nbrNode := range shp.graph.Nodes[vertex].Nbrlist {
+		uBucket := shp.vertex2Bucket[nbrNode]
 		ns[uBucket]++
 	}
 	for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
@@ -258,10 +256,8 @@ func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
 func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
-
-	for nbr := shp.graph.Nodes[vertex].Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(NbrNode).Id
-		uBucket := shp.vertex2Bucket[u]
+	for _, nbrNode := range shp.graph.Nodes[vertex].Nbrlist {
+		uBucket := shp.vertex2Bucket[nbrNode]
 		ns[uBucket]++
 	}
 	for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
@@ -281,9 +277,8 @@ func (shp *SHPImpl) CalcFanout() (fanout float64) {
 
 func (shp *SHPImpl) computeBucketSingle(node *Node) []int {
 	nb := make([]int, shp.bucketSize)
-	for nbr := node.Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-		u := nbr.Value.(NbrNode).Id
-		uBucket := shp.vertex2Bucket[u]
+	for _, nbrNode := range node.Nbrlist {
+		uBucket := shp.vertex2Bucket[nbrNode]
 		nb[uBucket]++
 	}
 	shp.nbrBucket[node.id] = nb

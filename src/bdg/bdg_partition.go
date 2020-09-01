@@ -95,8 +95,7 @@ func (bdg *BDGImpl) bfs() {
 		g := bdg.graph.Nodes
 		for node := queue.Front(); node != nil; node = node.Next() {
 			color := g[node.Value.(uint64)].Color
-			for nbr := g[node.Value.(uint64)].Nbrlist.Front(); nbr != nil; nbr = nbr.Next() {
-				nbrNode := nbr.Value.(NbrNode).Id
+			for _, nbrNode := range g[node.Value.(uint64)].Nbrlist {
 				if g[nbrNode].Color == math.MaxUint64 {
 					g[nbrNode].Color = color
 					// add neighbor node into block

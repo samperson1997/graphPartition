@@ -1,7 +1,6 @@
 package partition
 
 import (
-	"container/list"
 	"math"
 )
 
@@ -37,7 +36,7 @@ type NbrNode struct {
 // Node a vertex and Nbrlist
 type Node struct {
 	id      uint64
-	Nbrlist *list.List
+	Nbrlist []uint64
 	Color   uint64
 }
 
@@ -45,13 +44,12 @@ type Node struct {
 func NewNode(id uint64) *Node {
 	n := Node{
 		id:      id,
-		Nbrlist: list.New(),
+		Nbrlist: make([]uint64, 0),
 		Color:   math.MaxUint64,
 	}
-	n.Nbrlist.Init()
 	return &n
 }
 
 func (n *Node) addNbr(id uint64) {
-	n.Nbrlist.PushBack(NbrNode{id})
+	n.Nbrlist = append(n.Nbrlist, id)
 }

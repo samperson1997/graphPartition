@@ -7,17 +7,25 @@ import (
 // Graph manage Nodes
 type Graph struct {
 	Nodes []*Node
+	// vertex from 0~vertexSize
+	vertexSize uint64
 }
 
 // NewGraph return a empty graph with vertexSize vertex
-func NewGraph(vertexSize int) *Graph {
+func NewGraph(vertexSize uint64) *Graph {
 	g := Graph{
 		Nodes: make([]*Node, vertexSize),
+		vertexSize:vertexSize,
 	}
-	for i := 0; i < vertexSize; i++ {
-		g.Nodes[i] = NewNode(uint64(i))
+	for i := uint64(0); i < vertexSize; i++ {
+		g.Nodes[i] = NewNode(i)
 	}
 	return &g
+}
+
+// GetVertexSize return vertexsize 
+func (g *Graph) GetVertexSize()uint64{
+	return g.vertexSize
 }
 
 // AddEdge Add edge from src to dst
@@ -25,17 +33,14 @@ func (g *Graph) AddEdge(src, dst uint64) {
 	g.Nodes[src].addNbr(dst)
 }
 
+// ChangeColor change node color
 func (g *Graph) ChangeColor(id, color uint64) {
 	g.Nodes[id].Color = color
 }
 
-type NbrNode struct {
-	Id uint64
-}
-
 // Node a vertex and Nbrlist
 type Node struct {
-	id      uint64
+	ID      uint64
 	Nbrlist []uint64
 	Color   uint64
 }
@@ -43,7 +48,7 @@ type Node struct {
 // NewNode returns a node with id and empty list
 func NewNode(id uint64) *Node {
 	n := Node{
-		id:      id,
+		ID:      id,
 		Nbrlist: make([]uint64, 0),
 		Color:   math.MaxUint64,
 	}

@@ -1,4 +1,4 @@
-package partition
+package pshp
 
 const (
 	defaultProb       = 0.5

@@ -7,21 +7,22 @@ import (
 	"os"
 	"strings"
 )
-
-// LoadGraph load a graph with path
-func LoadGraph(path string, BucketSize int, prob float64) (c Config) {
+// LoadGraphFromPath load a graph with path
+func LoadGraphFromPath(path string) (g *Graph,err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Printf(err.Error())
-		return
+		return nil,err
 	}
 	defer file.Close()
 
 	reader := bufio.NewReader(file)
 
 	str, err := reader.ReadString('\n')
-	fmt.Fscanf(strings.NewReader(str), "%d", &c.VertexSize)
-	c.Graph = NewGraph(int(c.VertexSize))
+	var vertexSize uint64
+	fmt.Fscanf(strings.NewReader(str), "%d", &vertexSize)
+	
+	g = NewGraph(vertexSize)
 	var src, dst uint64
 	edgeSize := 0
 	for {
@@ -31,33 +32,11 @@ func LoadGraph(path string, BucketSize int, prob float64) (c Config) {
 		}
 		edgeSize++
 		fmt.Fscanf(strings.NewReader(str), "%d %d", &src, &dst)
-		if src < 0 || src >= c.VertexSize || dst < 0 || dst >= c.VertexSize {
-			fmt.Println("err in edge with src: ", src, " dst: ", dst, "vertexSize ", c.VertexSize)
-			return
+		if src < 0 || src >= vertexSize || dst < 0 || dst >= vertexSize {
+			return nil,fmt.Errorf("err in edge with src: %d dst: %d vertexSize: %d",src,dst,vertexSize)
 		}
-		c.Graph.AddEdge(src, dst)
-		c.Graph.AddEdge(dst, src)
+		g.AddEdge(src, dst)
+		g.AddEdge(dst, src)
 	}
-	fmt.Println("load data from ", path, "vertex:", c.VertexSize, "edge:", edgeSize)
-	c.Prob = defaultProb
-	c.BucketSize = defaultBucketSize
-	if BucketSize >= 1 {
-		c.BucketSize = uint64(BucketSize)
-	}
-	if prob <= 1 && prob >= 0 {
-		c.Prob = prob
-	}
-	return
-}
-func min(a, b uint64) uint64 {
-	if a > b {
-		return b
-	}
-	return a
-}
-func max(a, b uint64) uint64 {
-	if a > b {
-		return a
-	}
-	return b
+	return g,nil
 }

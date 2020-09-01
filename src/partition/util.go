@@ -9,7 +9,7 @@ import (
 )
 
 // LoadGraph load a graph with path
-func LoadGraph(path string, BucketSize int) (c Config) {
+func LoadGraph(path string, BucketSize int, prob float64) (c Config) {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Printf(err.Error())
@@ -39,8 +39,14 @@ func LoadGraph(path string, BucketSize int) (c Config) {
 		c.Graph.AddEdge(dst, src)
 	}
 	fmt.Println("load data from ", path, "vertex:", c.VertexSize, "edge:", edgeSize)
-	c.BucketSize = uint64(BucketSize)
-	c.Prob = 0.5
+	c.Prob = defaultProb
+	c.BucketSize = defaultBucketSize
+	if BucketSize >= 1 {
+		c.BucketSize = uint64(BucketSize)
+	}
+	if prob <= 1 && prob >= 0 {
+		c.Prob = prob
+	}
 	return
 }
 func min(a, b uint64) uint64 {

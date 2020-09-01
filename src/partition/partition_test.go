@@ -3,7 +3,6 @@ package partition_test
 import (
 	"fmt"
 	pt "gpartition/partition"
-	"runtime"
 	"testing"
 	"time"
 )
@@ -17,7 +16,7 @@ func TestFanout(t *testing.T) {
 }
 func TestFanoutChange(t *testing.T) {
 	t.Logf("TestFanoutChange...")
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
 
@@ -37,7 +36,7 @@ func TestFanoutChange(t *testing.T) {
 
 func TestFanoutChangeParallel(t *testing.T) {
 	t.Logf("TestFanoutChangeParallel...")
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
 
@@ -57,7 +56,7 @@ func TestFanoutChangeParallel(t *testing.T) {
 
 //BenchmarkSHP a benchmark demo
 func BenchmarkSHP(b *testing.B) {
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	b.Run(
 		"social hash",
 		func(b *testing.B) {
@@ -73,7 +72,7 @@ func BenchmarkSHP(b *testing.B) {
 	)
 }
 func BenchmarkSHPParallel(b *testing.B) {
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	b.Run(
 		"social hash Parallel",
 		func(b *testing.B) {
@@ -89,7 +88,7 @@ func BenchmarkSHPParallel(b *testing.B) {
 	)
 }
 func BenchmarkSHPWithBufferParallel(b *testing.B) {
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	b.Run(
 		"social hash Parallel",
 		func(b *testing.B) {
@@ -106,7 +105,7 @@ func BenchmarkSHPWithBufferParallel(b *testing.B) {
 }
 
 func BenchmarkSHPEachIteration(b *testing.B) {
-	config := pt.LoadGraph("test_data/youtube.in", 5)
+	config := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
 	beginTime := time.Now().UnixNano() / 1000
@@ -114,17 +113,16 @@ func BenchmarkSHPEachIteration(b *testing.B) {
 
 		fmt.Printf("social hash Parallel iter: %d\n", iter)
 		time.Now().UnixNano()
-		time1 := time.Now().UnixNano() //纳秒
+		time1 := time.Now().UnixNano()
 		shp.PreComputeBucket()
-		time2 := time.Now().UnixNano() //纳秒
+		time2 := time.Now().UnixNano()
 		shp.ComputMoveGainParallel()
-		time3 := time.Now().UnixNano() //纳秒
+		time3 := time.Now().UnixNano()
 		shp.ComputMoveProb()
-		time4 := time.Now().UnixNano() //纳秒
+		time4 := time.Now().UnixNano()
 		shp.SetNewParallel()
-		time5 := time.Now().UnixNano() //纳秒
+		time5 := time.Now().UnixNano()
 		fmt.Println(time2-time1, time3-time2, time4-time3, time5-time4, time5-time1)
-		runtime.GC()
 		endTime := time.Now().UnixNano() / 1000
 		fmt.Println("process minisecond", endTime-beginTime)
 	}

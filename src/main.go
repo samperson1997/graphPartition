@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	config := pt.LoadGraph("partition/test_data/youtube.in", 5)
+	config := pt.LoadGraph("partition/test_data/youtube.in", 5, 0.5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
 

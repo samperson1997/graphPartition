@@ -12,7 +12,7 @@ func main() {
 
 	fmt.Println(int(shp.CalcFanout()))
 	iter := 0
-	for pt.NextIteration(shp) && iter < 500 {
+	for pt.NextIterationParallel(shp) && iter < 500 {
 		fmt.Println("CalcFanout", int(shp.CalcFanout()))
 		iter++
 	}

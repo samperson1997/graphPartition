@@ -200,6 +200,7 @@ func (shp *SHPImpl) SetNewParallel() (ret bool) {
 	isSet.Store(false)
 	segmentVertexSize := (shp.vertexSize + parallel - 1) / parallel
 	var wg sync.WaitGroup
+	number := int64(0)
 	for beginvertex := uint64(0); beginvertex < shp.vertexSize; beginvertex += segmentVertexSize {
 		wg.Add(1)
 		go func(begin, end uint64) {
@@ -209,11 +210,13 @@ func (shp *SHPImpl) SetNewParallel() (ret bool) {
 					rand.Float64() < shp.probability[shp.vertex2Bucket[vertex]][shp.vertex2Target[vertex]] {
 					shp.vertex2Bucket[vertex] = shp.vertex2Target[vertex]
 					isSet.Store(true)
+					atomic.AddInt64(&number, 1)
 				}
 			}
 		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
+	fmt.Println("setnew number :", number)
 	return isSet.Load().(bool)
 }
 
@@ -232,7 +235,6 @@ func (shp *SHPImpl) SetNew() (ret bool) {
 
 // PrintResult print all result
 func (shp *SHPImpl) PrintResult() {
-
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
 		fmt.Println("vertex:", vertex, " bucket:", shp.vertex2Bucket[vertex])
 	}

@@ -1,9 +1,11 @@
 package partition_test
 
 import (
-	"testing"
-
+	"fmt"
 	pt "gpartition/partition"
+	"runtime"
+	"testing"
+	"time"
 )
 
 // TODO
@@ -101,4 +103,29 @@ func BenchmarkSHPWithBufferParallel(b *testing.B) {
 			}
 		},
 	)
+}
+
+func BenchmarkSHPEachIteration(b *testing.B) {
+	config := pt.LoadGraph("test_data/youtube.in", 5)
+	shp := pt.NewSHPImpl(config)
+	shp.InitBucket()
+	beginTime := time.Now().UnixNano() / 1000
+	for iter := 0; iter < 1000; iter++ {
+
+		fmt.Printf("social hash Parallel iter: %d\n", iter)
+		time.Now().UnixNano()
+		time1 := time.Now().UnixNano() //纳秒
+		shp.PreComputeBucket()
+		time2 := time.Now().UnixNano() //纳秒
+		shp.ComputMoveGainParallel()
+		time3 := time.Now().UnixNano() //纳秒
+		shp.ComputMoveProb()
+		time4 := time.Now().UnixNano() //纳秒
+		shp.SetNewParallel()
+		time5 := time.Now().UnixNano() //纳秒
+		fmt.Println(time2-time1, time3-time2, time4-time3, time5-time4, time5-time1)
+		runtime.GC()
+		endTime := time.Now().UnixNano() / 1000
+		fmt.Println("process minisecond", endTime-beginTime)
+	}
 }

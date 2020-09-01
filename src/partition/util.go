@@ -40,7 +40,6 @@ func LoadGraph(path string, BucketSize int) (c Config) {
 	}
 	fmt.Println("load data from ", path, "vertex:", c.VertexSize, "edge:", edgeSize)
 	c.BucketSize = uint64(BucketSize)
-	//prob is useless here...
 	c.Prob = 0.5
 	return
 }

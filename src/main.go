@@ -1,17 +1,20 @@
 package main
 
 import (
+	"fmt"
 	pt "gpartition/partition"
 )
 
 func main() {
-	config := pt.LoadGraph("data.in", 5)
-
+	config := pt.LoadGraph("partition/test_data/youtube.in", 5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
-	maxIteration := 100
-	for i := 0; i < maxIteration; i++ {
-		pt.NextIteration(shp)
+
+	fmt.Println(int(shp.CalcFanout()))
+	iter := 0
+	for pt.NextIteration(shp) && iter < 500 {
+		fmt.Println("CalcFanout", int(shp.CalcFanout()))
+		iter++
 	}
-	//shp.PrintResult()
+
 }

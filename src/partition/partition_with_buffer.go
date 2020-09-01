@@ -57,6 +57,8 @@ func (shp *SHPImpl) ComputMoveGainWithBufferParallel() {
 	}
 	parallel := uint64(runtime.NumCPU())
 	atomic.StoreInt64(&shp.tf.bufferSize, 0)
+	// TODO
+	// make parallel seperate stable
 	segmentVertexSize := (shp.vertexSize + parallel - 1) / parallel
 	var wg sync.WaitGroup
 	for beginvertex := uint64(0); beginvertex < shp.vertexSize; beginvertex += segmentVertexSize {
@@ -70,7 +72,6 @@ func (shp *SHPImpl) ComputMoveGainWithBufferParallel() {
 				target := preBucket
 				gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
 				for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
-
 					gain := gains[bucketI]
 					if gain < minGain {
 						minGain = gain
@@ -119,8 +120,9 @@ func (shp *SHPImpl) ComputMoveGainWithBuffer() {
 	}
 }
 
-// NextIterationParallel process a iteration with a iteration
+// NextIterationWithBufferParallel process a iteration with a iteration
 func NextIterationWithBufferParallel(shp *SHPImpl) bool {
+	shp.PreComputeBucketParallel()
 	shp.ComputMoveGainWithBufferParallel()
 	shp.ComputMoveProb()
 	return shp.SetNewWithBufferParallel()

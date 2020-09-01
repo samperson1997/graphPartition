@@ -1,7 +1,6 @@
 package partition_test
 
 import (
-	"fmt"
 	"testing"
 
 	pt "gpartition/partition"
@@ -15,14 +14,43 @@ func TestFanout(t *testing.T) {
 	shp.CalcFanout()
 }
 func TestFanoutChange(t *testing.T) {
+	t.Logf("TestFanoutChange...")
 	config := pt.LoadGraph("test_data/youtube.in", 5)
 	shp := pt.NewSHPImpl(config)
 	shp.InitBucket()
 
-	fmt.Println(int(shp.CalcFanout()))
-	for pt.NextIteration(shp) {
+	initFanout := shp.CalcFanout()
+	iter := 0
+	for pt.NextIteration(shp) && iter < 100 {
+		iter++
 	}
-	fmt.Println(int(shp.CalcFanout()))
+	resultFanout := shp.CalcFanout()
+	if initFanout <= resultFanout {
+		t.Fatalf("init fanout is better than resultFanout  with initFanout:%d  resultFanout:%d\n", int(initFanout), int(resultFanout))
+	}
+	if iter >= 100 {
+		t.Fatalf("too much iteration, may be not convergence\n")
+	}
+}
+
+func TestFanoutChangeParallel(t *testing.T) {
+	t.Logf("TestFanoutChangeParallel...")
+	config := pt.LoadGraph("test_data/youtube.in", 5)
+	shp := pt.NewSHPImpl(config)
+	shp.InitBucket()
+
+	initFanout := shp.CalcFanout()
+	iter := 0
+	for pt.NextIterationParallel(shp) && iter < 100 {
+		iter++
+	}
+	resultFanout := shp.CalcFanout()
+	if initFanout <= resultFanout {
+		t.Fatalf("init fanout is better than resultFanout  with initFanout:%d  resultFanout:%d\n", int(initFanout), int(resultFanout))
+	}
+	if iter >= 100 {
+		t.Fatalf("too much iteration, may be not convergence\n")
+	}
 }
 
 //BenchmarkSHP a benchmark demo

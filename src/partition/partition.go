@@ -79,8 +79,13 @@ func NewSHPImpl(c Config) *SHPImpl {
 	return &shp
 }
 
-func (shp *SHPImpl) calcSingleGain(node *Node) (gains []float64) {
-	gains = make([]float64, shp.bucketSize)
+func (shp *SHPImpl) calcSingleGain(node *Node) (minGain float64, target uint64) {
+	minGain = 0.1
+	preBucket := shp.vertex2Bucket[node.id]
+	shp.vertex2Target[node.id] = preBucket
+	// init target is not change
+	target = shp.vertex2Bucket[node.id]
+	gains := make([]float64, shp.bucketSize)
 	vertex := node.id
 	for _, nbrNode := range node.Nbrlist {
 		uBucket := shp.vertex2Bucket[node.id]
@@ -89,6 +94,12 @@ func (shp *SHPImpl) calcSingleGain(node *Node) (gains []float64) {
 			if bucketJ != shp.vertex2Bucket[vertex] {
 				gains[bucketJ] += math.Pow(1-shp.prob, float64(nb[bucketJ])) - math.Pow(1-shp.prob, float64(nb[uBucket]-1))
 			}
+		}
+	}
+	for bucketI, gain := range gains {
+		if gain < minGain {
+			minGain = gain
+			target = uint64(bucketI)
 		}
 	}
 	return
@@ -110,21 +121,10 @@ func (shp *SHPImpl) ComputMoveGainParallel() {
 		go func(begin, end uint64) {
 			defer wg.Done()
 			for vertex := begin; vertex != end; vertex++ {
-				minGain := math.MaxFloat64
-				preBucket := shp.vertex2Bucket[vertex]
-				shp.vertex2Target[vertex] = preBucket
-				target := preBucket
-				gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
-				for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
-					gain := gains[bucketI]
-					if gain < minGain {
-						minGain = gain
-						target = bucketI
-					}
-				}
+				minGain, target := shp.calcSingleGain(shp.graph.Nodes[vertex])
 				if minGain < 0 {
 					shp.vertex2Target[vertex] = target
-					atomic.AddUint64(&shp.vertexTrans[preBucket][target], 1)
+					atomic.AddUint64(&shp.vertexTrans[shp.vertex2Bucket[vertex]][target], 1)
 				}
 			}
 		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
@@ -148,21 +148,10 @@ func (shp *SHPImpl) ComputMoveGain() {
 	}
 	changeNumber := 0
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
-		minGain := math.MaxFloat64
-		preBucket := shp.vertex2Bucket[vertex]
-		shp.vertex2Target[vertex] = preBucket
-		target := preBucket
-		gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
-		for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
-			gain := gains[bucketI]
-			if gain < minGain {
-				minGain = gain
-				target = bucketI
-			}
-		}
+		minGain, target := shp.calcSingleGain(shp.graph.Nodes[vertex])
 		if minGain < 0 {
 			shp.vertex2Target[vertex] = target
-			shp.vertexTrans[preBucket][target]++
+			shp.vertexTrans[shp.vertex2Bucket[vertex]][target]++
 			changeNumber++
 		}
 	}

@@ -2,7 +2,6 @@ package partition
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -66,21 +65,10 @@ func (shp *SHPImpl) ComputMoveGainWithBufferParallel() {
 		go func(begin, end uint64) {
 			defer wg.Done()
 			for vertex := begin; vertex != end; vertex++ {
-				minGain := math.MaxFloat64
-				preBucket := shp.vertex2Bucket[vertex]
-				shp.vertex2Target[vertex] = preBucket
-				target := preBucket
-				gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
-				for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
-					gain := gains[bucketI]
-					if gain < minGain {
-						minGain = gain
-						target = bucketI
-					}
-				}
+				minGain, target := shp.calcSingleGain(shp.graph.Nodes[vertex])
 				if minGain < 0 {
 					shp.vertex2Target[vertex] = target
-					atomic.AddUint64(&shp.vertexTrans[preBucket][target], 1)
+					atomic.AddUint64(&shp.vertexTrans[shp.vertex2Bucket[vertex]][target], 1)
 					tp := atomic.AddInt64(&shp.tf.bufferSize, 1)
 					shp.tf.buffer[tp-1] = vertex
 				}
@@ -99,21 +87,11 @@ func (shp *SHPImpl) ComputMoveGainWithBuffer() {
 		}
 	}
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
-		minGain := math.MaxFloat64
-		preBucket := shp.vertex2Bucket[vertex]
-		shp.vertex2Target[vertex] = preBucket
-		target := preBucket
-		gains := shp.calcSingleGain(shp.graph.Nodes[vertex])
-		for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
-			gain := gains[bucketI]
-			if gain < minGain {
-				minGain = gain
-				target = bucketI
-			}
-		}
+		minGain, target := shp.calcSingleGain(shp.graph.Nodes[vertex])
+
 		if minGain < 0 {
 			shp.vertex2Target[vertex] = target
-			shp.vertexTrans[preBucket][target]++
+			shp.vertexTrans[shp.vertex2Bucket[vertex]][target]++
 			shp.tf.buffer[shp.tf.bufferSize] = vertex
 			shp.tf.bufferSize++
 		}

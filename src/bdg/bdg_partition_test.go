@@ -16,6 +16,14 @@ func TestFanout(t *testing.T) {
 	bdg := NewBDGImpl(config)
 	bdg.bfs()
 	bdg.deterministicGreedy()
+
+	for i := range bdg.buckets {
+		fmt.Print(i, ": ")
+		for block := bdg.buckets[i].Front(); block != nil; block = block.Next() {
+			fmt.Print(block.Value.(uint64), ",")
+		}
+		fmt.Println()
+	}
 }
 
 // LoadGraph load a graph with path

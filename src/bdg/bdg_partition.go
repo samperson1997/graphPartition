@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"time"
 )
 
 type BDGConfig struct {
@@ -76,6 +77,7 @@ func (bdg *BDGImpl) bfs() {
 
 	// add random source nodes to blocks and change color
 	for i := uint64(0); i < bdg.blockSize; i++ {
+		rand.Seed(time.Now().UnixNano())
 		srcId := uint64(rand.Intn(int(bdg.vertexSize)))
 		_, ok := chosenSrc[srcId]
 		if ok {
@@ -133,20 +135,28 @@ func (bdg *BDGImpl) deterministicGreedy() {
 	// sort buckets by nodes size
 	sortedBlocks := sortBlocksByNodesNum(bdg.blocks)
 
-	// add first block into first bucket
-	bdg.buckets[0].PushBack(sortedBlocks[0].id)
-	for i := 1; i < len(sortedBlocks); i++ {
+	// add bucket num of blocks into buckets firstly
+	for i := 0; i < int(bdg.bucketSize); i++ {
+		bdg.buckets[i].PushBack(sortedBlocks[i].id)
+	}
+	for i := int(bdg.bucketSize); i < len(sortedBlocks); i++ {
 		block := sortedBlocks[i]
 		var bset = make(map[uint64]bool)
 		var pset = make(map[uint64]bool)
 		for nbr := range block.nbrlist {
-			bset[nbr] = true
+			// add nodes in nbr block into bset
+			for node := bdg.blocks[nbr].nodes.Front(); node != nil; node = node.Next() {
+				bset[node.Value.(uint64)] = true
+			}
 		}
 		j := 0.0
 		for i := 0; i < len(bdg.buckets); i++ {
-			blocksInWorker := bdg.buckets[0]
+			blocksInWorker := bdg.buckets[i]
 			for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
-				pset[blockInWorker.Value.(uint64)] = true
+				// add nodes in block in worker into pset
+				for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
+					pset[node.Value.(uint64)] = true
+				}
 			}
 			retainSize := 0
 			for key := range bset {
@@ -157,7 +167,7 @@ func (bdg *BDGImpl) deterministicGreedy() {
 			}
 			j = math.Max(j, float64(retainSize*(1-len(pset)/int(bdg.vertexSize))))
 		}
-		bdg.buckets[int(j)].PushBack(block.id)
+		bdg.buckets[int(j-0.5)].PushBack(block.id)
 	}
 }
 

@@ -1,9 +1,14 @@
-f = open("comljungraph.txt")
-
-
+import sys
+'''
+data_process.py [data_path]
+'''
 mp = dict()
-id = 0
-cnt = 0
+if len(sys.argv)!=2:
+    print("error no input file")
+    exit(0)
+id,cnt = 0,0
+data_path = sys.argv[1]
+f = open(data_path)
 for line in f.readlines():
     line = line.strip()
     line = line.split()

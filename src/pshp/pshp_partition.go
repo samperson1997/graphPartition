@@ -291,7 +291,7 @@ func (shp *SHPImpl) computeBucketSingle(node *common.Node) []int {
 		nb[uBucket]++
 	}
 	//TODO
-	shp.nbrBucket[node.ID] = nb
+	//shp.nbrBucket[node.ID] = nb
 	return nb
 }
 

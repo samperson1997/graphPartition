@@ -33,7 +33,8 @@ type BDGImpl struct {
 	buckets []*list.List
 
 	// graph manage all graph data
-	graph *Graph
+	graph         *Graph
+	vertex2Bucket []uint64
 }
 
 func NewBlock(id uint64) *Block {
@@ -50,15 +51,16 @@ func (block *Block) addBlockNbr(id uint64) {
 	block.nbrlist[id] = true
 }
 
-// BDGImpl a new bdgimpl with Config
+// NewBDGImpl a new bdgimpl with Config
 func NewBDGImpl(c BDGConfig) *BDGImpl {
 	bdg := BDGImpl{
-		graph:      c.Graph,
-		blockSize:  c.BlockSize,
-		vertexSize: c.VertexSize,
-		bucketSize: c.BucketSize,
-		blocks:     make([]*Block, c.BlockSize),
-		buckets:    make([]*list.List, c.BucketSize),
+		graph:         c.Graph,
+		blockSize:     c.BlockSize,
+		vertexSize:    c.VertexSize,
+		bucketSize:    c.BucketSize,
+		blocks:        make([]*Block, c.BlockSize),
+		buckets:       make([]*list.List, c.BucketSize),
+		vertex2Bucket: make([]uint64, c.VertexSize),
 	}
 	for i := range bdg.buckets {
 		bdg.buckets[i] = list.New()
@@ -109,7 +111,53 @@ func (bdg *BDGImpl) bfs() {
 
 // deterministicGreedy deterministic greedy strategy
 func (bdg *BDGImpl) deterministicGreedy() {
+	capacity := float64(bdg.vertexSize) / float64(bdg.bucketSize)
+
+	// sort buckets by nodes size
+	sort.Slice(bdg.blocks, func(i, j int) bool {
+		return bdg.blocks[i].nodes.Len() > bdg.blocks[j].nodes.Len()
+	})
+
 	// ===== print blocks info ======
+	bdg.printBlocksInfo()
+
+	// add bucket num of blocks into buckets firstly
+	for i := 0; i < int(bdg.bucketSize); i++ {
+		bdg.buckets[i].PushBack(bdg.blocks[i].id)
+	}
+	for i := int(bdg.bucketSize); i < len(bdg.blocks); i++ {
+		block := bdg.blocks[i]
+		var bset = make(map[uint64]bool)
+		for nbr := range block.nbrlist {
+			// add nodes in nbr block into bset
+			for node := bdg.blocks[nbr].nodes.Front(); node != nil; node = node.Next() {
+				bset[node.Value.(uint64)] = true
+			}
+		}
+		j := 0.0
+		for i := 0; i < len(bdg.buckets); i++ {
+			blocksInWorker := bdg.buckets[i]
+			var pset = make(map[uint64]bool)
+			for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
+				// add nodes in block in worker into pset
+				for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
+					pset[node.Value.(uint64)] = true
+				}
+			}
+			retainSize := 0
+			for key := range pset {
+				_, ok := bset[key]
+				if ok {
+					retainSize++
+				}
+			}
+			j = math.Max(j, float64(retainSize)*(1-float64(len(pset))/capacity))
+		}
+		bdg.buckets[int(j)].PushBack(block.id)
+	}
+}
+
+func (bdg *BDGImpl) printBlocksInfo() {
 	for k, v := range bdg.blocks {
 		fmt.Print("Key:", k, ",nodes:", v.nodes.Len(), "(")
 		for node := v.nodes.Front(); node != nil; node = node.Next() {
@@ -123,57 +171,30 @@ func (bdg *BDGImpl) deterministicGreedy() {
 		fmt.Println()
 		fmt.Println("=======")
 	}
-	// ====== end print ======
+}
 
-	// sort buckets by nodes size
-	sort.Slice(bdg.blocks, func(i, j int) bool {
-		return bdg.blocks[i].nodes.Len() > bdg.blocks[j].nodes.Len()
-	})
-	capacity := float64(bdg.vertexSize) / float64(bdg.bucketSize)
+func (bdg *BDGImpl) Calc() {
+	bdg.bfs()
+	bdg.deterministicGreedy()
+}
 
-	// add bucket num of blocks into buckets firstly
-	for i := 0; i < int(bdg.bucketSize); i++ {
-		bdg.buckets[i].PushBack(bdg.blocks[i].id)
-	}
-	for i := int(bdg.bucketSize); i < len(bdg.blocks); i++ {
-		block := bdg.blocks[i]
-		var bset = make(map[uint64]bool)
-		var pset = make(map[uint64]bool)
-		for nbr := range block.nbrlist {
-			// add nodes in nbr block into bset
-			for node := bdg.blocks[nbr].nodes.Front(); node != nil; node = node.Next() {
-				bset[node.Value.(uint64)] = true
+func (bdg *BDGImpl) AfterCalc() {
+	for i := range bdg.buckets {
+		blocksInWorker := bdg.buckets[i]
+		for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
+			for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
+				bdg.vertex2Bucket[node.Value.(uint64)] = uint64(i)
 			}
 		}
-		j := 0.0
-		for i := 0; i < len(bdg.buckets); i++ {
-			blocksInWorker := bdg.buckets[i]
-			for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
-				// add nodes in block in worker into pset
-				for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
-					pset[node.Value.(uint64)] = true
-				}
-			}
-			retainSize := 0
-			for key := range bset {
-				_, ok := pset[key]
-				if ok {
-					retainSize++
-				}
-			}
-			j = math.Max(j, float64(retainSize)*(1-float64(len(pset))/capacity))
-		}
-		bdg.buckets[int(math.Floor(j))].PushBack(block.id)
 	}
 }
 
-//TODO
-func (bdg *BDGImpl)	Calc(){
-
+func (bdg *BDGImpl) GetBucketFromId(id uint64) uint64 {
+	if id > bdg.vertexSize {
+		return math.MaxUint64
+	}
+	return bdg.vertex2Bucket[id]
 }
-func (bdg *BDGImpl)GetBucketFromId(uint64)uint64{
-	return 0
-}
-func (bdg *BDGImpl)GetGraph()*Graph{
-	return nil
+func (bdg *BDGImpl) GetGraph() *Graph {
+	return bdg.graph
 }

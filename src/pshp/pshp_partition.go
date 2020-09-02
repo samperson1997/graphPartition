@@ -1,8 +1,8 @@
 package pshp
 
 import (
-	"gpartition/common"
 	"fmt"
+	"gpartition/common"
 	"log"
 	"math"
 	"math/rand"
@@ -10,11 +10,12 @@ import (
 	"sync"
 	"sync/atomic"
 )
+
 // LoadGraph load a graph with path
-func LoadGraph(path string, BucketSize int, prob float64) (c SHPConfig,err error) {
-	c.Graph,err = common.LoadGraphFromPath(path)
-	if err != nil{
-		return SHPConfig{},err
+func LoadGraph(path string, BucketSize int, prob float64) (c SHPConfig, err error) {
+	c.Graph, err = common.LoadGraphFromPath(path)
+	if err != nil {
+		return SHPConfig{}, err
 	}
 	c.VertexSize = c.Graph.GetVertexSize()
 	c.Prob = defaultProb
@@ -25,8 +26,9 @@ func LoadGraph(path string, BucketSize int, prob float64) (c SHPConfig,err error
 	if prob <= 1 && prob >= 0 {
 		c.Prob = prob
 	}
-	return c,nil
+	return c, nil
 }
+
 type bucket struct {
 }
 
@@ -337,20 +339,25 @@ func NextIterationParallel(shp *SHPImpl) bool {
 	shp.ComputMoveProb()
 	return shp.SetNewParallel()
 }
-// Calc calc all 
-func (shp *SHPImpl)Calc(){
+
+// Calc calc all
+func (shp *SHPImpl) Calc() {
 	shp.InitBucket()
 	iter := 0
-	for NextIterationWithBufferParallel(shp) && iter<100 {
+	for NextIterationWithBufferParallel(shp) && iter < 100 {
 		iter++
 	}
 }
-func (shp *SHPImpl)GetBucketFromId(id uint64)uint64{
-	if id > shp.vertexSize{
+func (shp *SHPImpl) GetBucketFromId(id uint64) uint64 {
+	if id > shp.vertexSize {
 		return math.MaxUint64
 	}
 	return shp.vertex2Bucket[id]
 }
-func (shp *SHPImpl)GetGraph()*common.Graph{
+func (shp *SHPImpl) GetGraph() *common.Graph {
 	return shp.graph
+}
+
+func (shp *SHPImpl) AfterCal() {
+
 }

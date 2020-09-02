@@ -11,7 +11,7 @@ import (
 )
 
 func TestFanout(t *testing.T) {
-	config := LoadGraphForBDG("data.in", 3, 6)
+	config := LoadGraphForBDG("../data.in", 3, 6)
 
 	bdg := NewBDGImpl(config)
 	bdg.bfs()

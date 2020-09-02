@@ -6,10 +6,10 @@ import (
 type PartitionType int8
 
 const (
-	//shpPartitionType type
-	shpPartitionType PartitionType = iota
-	//bdgPartitionType simple type
-	bdgPartitionType
+	//BdgPartitionType type
+	BdgPartitionType PartitionType = iota
+	//ShpPartitionType simple type
+	ShpPartitionType
 )
 
 // Config 

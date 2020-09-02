@@ -358,6 +358,6 @@ func (shp *SHPImpl) GetGraph() *common.Graph {
 	return shp.graph
 }
 
-func (shp *SHPImpl) AfterCal() {
+func (shp *SHPImpl) AfterCalc() {
 
 }

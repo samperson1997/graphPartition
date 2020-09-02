@@ -53,6 +53,7 @@ func calcSingleFanout(vertex uint64, graph *common.Graph, p Partition) (fanout i
 	return
 }
 
+
 // CalcFanout for test
 // partition is not calced
 func CalcFanout(p Partition) (fanout int) {
@@ -65,6 +66,7 @@ func CalcFanout(p Partition) (fanout int) {
 	return
 }
 
+// GetEachBucketVolumn get each bucket volumn
 func GetEachBucketVolumn(p Partition) {
 	p.Calc()
 	p.AfterCalc()

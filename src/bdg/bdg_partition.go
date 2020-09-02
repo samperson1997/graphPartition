@@ -3,7 +3,7 @@ package bdg
 import (
 	"container/list"
 	"fmt"
-	. "gpartition/partition"
+	. "gpartition/common"
 	"math"
 	"math/rand"
 	"sort"
@@ -165,4 +165,15 @@ func (bdg *BDGImpl) deterministicGreedy() {
 		}
 		bdg.buckets[int(math.Floor(j))].PushBack(block.id)
 	}
+}
+
+//TODO
+func (bdg *BDGImpl)	Calc(){
+
+}
+func (bdg *BDGImpl)GetBucketFromId(uint64)uint64{
+	return 0
+}
+func (bdg *BDGImpl)GetGraph()*Graph{
+	return nil
 }

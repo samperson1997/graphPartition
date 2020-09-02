@@ -122,3 +122,7 @@ func BenchmarkSHPEachIteration(b *testing.B) {
 		fmt.Println("process minisecond", endTime-beginTime)
 	}
 }
+
+func TestFanoutCalc(t *testing.T){
+
+}

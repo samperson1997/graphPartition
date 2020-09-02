@@ -1,7 +1,7 @@
 package pshp
 
 import (
-	"gpartition/partition"
+	"gpartition/common"
 	"fmt"
 	"log"
 	"math"
@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 )
 // LoadGraph load a graph with path
-func LoadGraph(path string, BucketSize int, prob float64) (c Config,err error) {
-	c.Graph,err = partition.LoadGraphFromPath(path)
+func LoadGraph(path string, BucketSize int, prob float64) (c SHPConfig,err error) {
+	c.Graph,err = common.LoadGraphFromPath(path)
 	if err != nil{
-		return Config{},err
+		return SHPConfig{},err
 	}
 	c.VertexSize = c.Graph.GetVertexSize()
 	c.Prob = defaultProb
@@ -40,12 +40,12 @@ type transferNeed struct {
 	bufferSize int64
 }
 
-// Config SHPImpl config
-type Config struct {
+// SHPConfig SHPImpl config
+type SHPConfig struct {
 	VertexSize uint64
 	BucketSize uint64
 	Prob       float64
-	Graph      *partition.Graph
+	Graph      *common.Graph
 }
 
 // SHPImpl calc SHP partition
@@ -66,11 +66,11 @@ type SHPImpl struct {
 
 	tf transferNeed
 	// graph manage all graph data
-	graph *partition.Graph
+	graph *common.Graph
 }
 
 // NewSHPImpl a new shpimpl with Config
-func NewSHPImpl(c Config) *SHPImpl {
+func NewSHPImpl(c SHPConfig) *SHPImpl {
 	shp := SHPImpl{
 		graph:         c.Graph,
 		vertex2Bucket: make([]uint64, c.VertexSize),
@@ -96,7 +96,7 @@ func NewSHPImpl(c Config) *SHPImpl {
 	return &shp
 }
 
-func (shp *SHPImpl) calcSingleGain(node *partition.Node) (minGain float64, target uint64) {
+func (shp *SHPImpl) calcSingleGain(node *common.Node) (minGain float64, target uint64) {
 	minGain = 0.1
 	preBucket := shp.vertex2Bucket[node.ID]
 	shp.vertex2Target[node.ID] = preBucket
@@ -282,7 +282,7 @@ func (shp *SHPImpl) CalcFanout() (fanout float64) {
 	return
 }
 
-func (shp *SHPImpl) computeBucketSingle(node *partition.Node) []int {
+func (shp *SHPImpl) computeBucketSingle(node *common.Node) []int {
 	nb := make([]int, shp.bucketSize)
 	for _, nbrNode := range node.Nbrlist {
 		uBucket := shp.vertex2Bucket[nbrNode]
@@ -344,4 +344,13 @@ func (shp *SHPImpl)Calc(){
 	for NextIterationWithBufferParallel(shp) && iter<100 {
 		iter++
 	}
+}
+func (shp *SHPImpl)GetBucketFromId(id uint64)uint64{
+	if id > shp.vertexSize{
+		return math.MaxUint64
+	}
+	return shp.vertex2Bucket[id]
+}
+func (shp *SHPImpl)GetGraph()*common.Graph{
+	return shp.graph
 }

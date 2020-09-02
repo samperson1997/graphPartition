@@ -27,7 +27,7 @@ func main() {
         os.Exit(0)
     }()
 
-	config,err := pt.LoadGraph("partition/test_data/youtube.in", 5, 0.5)
+	config,err := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
 	if err != nil{
 		fmt.Println(err.Error())
 		return

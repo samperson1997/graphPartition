@@ -1,4 +1,5 @@
 package partition
+
 import (
 	"gpartition/common"
 )
@@ -13,14 +14,13 @@ const (
 	ShpPartitionType
 )
 
-
 // Config all type of config
 type Config struct {
 	PartitionType
-	BlockSize uint64
-	VertexSize uint64
-	BucketSize uint64
-	Prob       float64
-	Graph      *common.Graph
+	SrcNodesNum uint64
+	StepNum     uint64
+	VertexSize  uint64
+	BucketSize  uint64
+	Prob        float64
+	Graph       *common.Graph
 }
-

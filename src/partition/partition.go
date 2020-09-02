@@ -4,6 +4,7 @@ import (
 	"gpartition/bdg"
 	"gpartition/common"
 	"gpartition/pshp"
+	"fmt"
 )
 
 type partition interface {
@@ -13,31 +14,29 @@ type partition interface {
 	AfterCalc()
 }
 
-func NewPartition(c Config) partition {
-	switch c.PartitionType {
-	case shpPartitionType:
+func NewPartition(c Config)(partition,error){
+	switch c.PartitionType{
+		case BdgPartitionType:
 		{
 			return bdg.NewBDGImpl(bdg.BDGConfig{
 				VertexSize: c.VertexSize,
-				BlockSize:  c.BlockSize,
-				BucketSize: c.BucketSize,
-				Graph:      c.Graph,
-			})
+				BlockSize :c.BlockSize,
+				BucketSize:c.BucketSize ,
+				Graph : c.Graph,
+			}),nil
 		}
-	case bdgPartitionType:
-		{
+		case ShpPartitionType:{
 			return pshp.NewSHPImpl(pshp.SHPConfig{
 				VertexSize: c.VertexSize,
-				Prob:       c.Prob,
-				BucketSize: c.BucketSize,
-				Graph:      c.Graph,
-			})
-		}
-	default:
-
+				Prob :c.Prob,
+				BucketSize:c.BucketSize,
+				Graph : c.Graph,
+			}),nil
+		}	
 	}
-
+	return nil,fmt.Errorf("no such type")
 }
+
 
 func calcSingleFanout(vertex uint64, graph *common.Graph, p partition) (fanout int) {
 	fanout = 0
@@ -52,7 +51,9 @@ func calcSingleFanout(vertex uint64, graph *common.Graph, p partition) (fanout i
 }
 
 // CalcFanout for test
+// partition is not calced
 func CalcFanout(p partition) (fanout int) {
+	p.Calc()
 	g := p.GetGraph()
 	for vertex := uint64(0); vertex < g.GetVertexSize(); vertex++ {
 		fanout += calcSingleFanout(vertex, g, p)

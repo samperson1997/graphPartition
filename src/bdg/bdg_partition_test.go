@@ -39,7 +39,7 @@ func LoadGraphForBDG(path string, bucketSize int, blockSize int) (c BDGConfig) {
 
 	str, err := reader.ReadString('\n')
 	fmt.Fscanf(strings.NewReader(str), "%d", &c.VertexSize)
-	c.Graph = NewGraph(int(c.VertexSize))
+	c.Graph = NewGraph(c.VertexSize)
 	var src, dst uint64
 	edgeSize := 0
 	for {

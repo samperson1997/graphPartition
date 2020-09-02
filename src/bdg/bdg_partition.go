@@ -29,7 +29,7 @@ type BDGImpl struct {
 	vertexSize uint64
 	bucketSize uint64
 
-	blocks  map[uint64]*Block
+	blocks  []*Block
 	buckets []*list.List
 
 	// graph manage all graph data
@@ -57,7 +57,7 @@ func NewBDGImpl(c BDGConfig) *BDGImpl {
 		blockSize:  c.BlockSize,
 		vertexSize: c.VertexSize,
 		bucketSize: c.BucketSize,
-		blocks:     make(map[uint64]*Block, c.BlockSize),
+		blocks:     make([]*Block, c.BlockSize),
 		buckets:    make([]*list.List, c.BucketSize),
 	}
 	for i := range bdg.buckets {
@@ -91,27 +91,20 @@ func (bdg *BDGImpl) bfs() {
 		bdg.blocks[i].nodes.PushBack(srcId)
 	}
 
-	for queue.Len() > 0 {
-		var tmpQueue = list.New()
-		tmpQueue.Init()
-		g := bdg.graph.Nodes
-		for node := queue.Front(); node != nil; node = node.Next() {
-			color := g[node.Value.(uint64)].Color
-			for _, nbrNode := range g[node.Value.(uint64)].Nbrlist {
-				if g[nbrNode].Color == math.MaxUint64 {
-					g[nbrNode].Color = color
-					// add neighbor node into block
-					bdg.blocks[color].nodes.PushBack(nbrNode)
-					tmpQueue.PushBack(nbrNode)
-				} else if g[nbrNode].Color != color {
-					bdg.blocks[color].addBlockNbr(g[nbrNode].Color)
-				}
+	g := bdg.graph.Nodes
+	for node := queue.Front(); node != nil && queue.Len() > 0; node = node.Next() {
+		color := g[node.Value.(uint64)].Color
+		for _, nbrNode := range g[node.Value.(uint64)].Nbrlist {
+			if g[nbrNode].Color == math.MaxUint64 {
+				g[nbrNode].Color = color
+				// add neighbor node into block
+				bdg.blocks[color].nodes.PushBack(nbrNode)
+				queue.PushBack(nbrNode)
+			} else if g[nbrNode].Color != color {
+				bdg.blocks[color].addBlockNbr(g[nbrNode].Color)
 			}
 		}
-		queue = tmpQueue
 	}
-
-	// running CC finding algorithm (like Hash-Min) on uncolored vertices
 }
 
 // deterministicGreedy deterministic greedy strategy
@@ -133,14 +126,17 @@ func (bdg *BDGImpl) deterministicGreedy() {
 	// ====== end print ======
 
 	// sort buckets by nodes size
-	sortedBlocks := sortBlocksByNodesNum(bdg.blocks)
+	sort.Slice(bdg.blocks, func(i, j int) bool {
+		return bdg.blocks[i].nodes.Len() > bdg.blocks[j].nodes.Len()
+	})
+	capacity := float64(bdg.vertexSize) / float64(bdg.bucketSize)
 
 	// add bucket num of blocks into buckets firstly
 	for i := 0; i < int(bdg.bucketSize); i++ {
-		bdg.buckets[i].PushBack(sortedBlocks[i].id)
+		bdg.buckets[i].PushBack(bdg.blocks[i].id)
 	}
-	for i := int(bdg.bucketSize); i < len(sortedBlocks); i++ {
-		block := sortedBlocks[i]
+	for i := int(bdg.bucketSize); i < len(bdg.blocks); i++ {
+		block := bdg.blocks[i]
 		var bset = make(map[uint64]bool)
 		var pset = make(map[uint64]bool)
 		for nbr := range block.nbrlist {
@@ -165,35 +161,8 @@ func (bdg *BDGImpl) deterministicGreedy() {
 					retainSize++
 				}
 			}
-			j = math.Max(j, float64(retainSize*(1-len(pset)/int(bdg.vertexSize))))
+			j = math.Max(j, float64(retainSize)*(1-float64(len(pset))/capacity))
 		}
-		bdg.buckets[int(j-0.5)].PushBack(block.id)
+		bdg.buckets[int(math.Floor(j))].PushBack(block.id)
 	}
-}
-
-// A slice of Pairs that implements sort.Interface to sort by Value.
-type BlockList []Block
-
-func (p BlockList) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
-}
-
-func (p BlockList) Len() int {
-	return len(p)
-}
-
-func (p BlockList) Less(i, j int) bool {
-	return p[i].nodes.Len() > p[j].nodes.Len()
-}
-
-// A function to turn a map into a BlockList, then sort and return it.
-func sortBlocksByNodesNum(m map[uint64]*Block) BlockList {
-	blockList := make(BlockList, len(m))
-	i := 0
-	for _, v := range m {
-		blockList[i] = *v
-		i++
-	}
-	sort.Sort(blockList)
-	return blockList
 }

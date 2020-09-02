@@ -3,6 +3,7 @@ import (
 	"gpartition/common"
 )
 
+// PartitionType defines different partition
 type PartitionType int8
 
 const (
@@ -12,7 +13,8 @@ const (
 	ShpPartitionType
 )
 
-// Config 
+
+// Config all type of config
 type Config struct {
 	PartitionType
 	BlockSize uint64

@@ -7,14 +7,17 @@ import (
 	"fmt"
 )
 
-type partition interface {
+// Partition can partion graph
+type Partition interface {
 	GetBucketFromId(uint64) uint64
 	GetGraph() *common.Graph
-	Calc()
+	GetBucketSize() uint64
 	AfterCalc()
+	Calc()
 }
 
-func NewPartition(c Config)(partition,error){
+// NewPartition returns a partition with type
+func NewPartition(c Config)(Partition,error){
 	switch c.PartitionType{
 		case BdgPartitionType:
 		{
@@ -38,7 +41,7 @@ func NewPartition(c Config)(partition,error){
 }
 
 
-func calcSingleFanout(vertex uint64, graph *common.Graph, p partition) (fanout int) {
+func calcSingleFanout(vertex uint64, graph *common.Graph, p Partition) (fanout int) {
 	fanout = 0
 	ns := make(map[uint64]bool, 0)
 	for _, nbrNode := range graph.Nodes[vertex].Nbrlist {
@@ -52,11 +55,28 @@ func calcSingleFanout(vertex uint64, graph *common.Graph, p partition) (fanout i
 
 // CalcFanout for test
 // partition is not calced
-func CalcFanout(p partition) (fanout int) {
+func CalcFanout(p Partition) (fanout int) {
 	p.Calc()
+	p.AfterCalc()
 	g := p.GetGraph()
 	for vertex := uint64(0); vertex < g.GetVertexSize(); vertex++ {
 		fanout += calcSingleFanout(vertex, g, p)
 	}
 	return
+}
+
+func GetEachBucketVolumn(p Partition){
+	p.Calc()
+	p.AfterCalc()
+	g := p.GetGraph()
+	ns := make([]int, p.GetBucketSize())
+
+	for vertex := uint64(0); vertex < g.GetVertexSize(); vertex++ {
+		uBucket := p.GetBucketFromId(vertex)
+		ns[uBucket]++
+	}
+
+	for bucketI,size := range ns{
+		fmt.Println(bucketI,size)
+	}
 }

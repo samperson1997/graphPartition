@@ -1,10 +1,10 @@
 package partition
 
 import (
+	"fmt"
 	"gpartition/bdg"
 	"gpartition/common"
 	"gpartition/pshp"
-	"fmt"
 )
 
 // Partition can partion graph
@@ -17,29 +17,29 @@ type Partition interface {
 }
 
 // NewPartition returns a partition with type
-func NewPartition(c Config)(Partition,error){
-	switch c.PartitionType{
-		case BdgPartitionType:
+func NewPartition(c Config) (Partition, error) {
+	switch c.PartitionType {
+	case BdgPartitionType:
 		{
 			return bdg.NewBDGImpl(bdg.BDGConfig{
 				VertexSize: c.VertexSize,
-				BlockSize :c.BlockSize,
-				BucketSize:c.BucketSize ,
-				Graph : c.Graph,
-			}),nil
+				BlockSize:  c.BlockSize,
+				BucketSize: c.BucketSize,
+				Graph:      c.Graph,
+			}), nil
 		}
-		case ShpPartitionType:{
+	case ShpPartitionType:
+		{
 			return pshp.NewSHPImpl(pshp.SHPConfig{
 				VertexSize: c.VertexSize,
-				Prob :c.Prob,
-				BucketSize:c.BucketSize,
-				Graph : c.Graph,
-			}),nil
-		}	
+				Prob:       c.Prob,
+				BucketSize: c.BucketSize,
+				Graph:      c.Graph,
+			}), nil
+		}
 	}
-	return nil,fmt.Errorf("no such type")
+	return nil, fmt.Errorf("no such type")
 }
-
 
 func calcSingleFanout(vertex uint64, graph *common.Graph, p Partition) (fanout int) {
 	fanout = 0
@@ -65,7 +65,7 @@ func CalcFanout(p Partition) (fanout int) {
 	return
 }
 
-func GetEachBucketVolumn(p Partition){
+func GetEachBucketVolumn(p Partition) {
 	p.Calc()
 	p.AfterCalc()
 	g := p.GetGraph()
@@ -76,7 +76,7 @@ func GetEachBucketVolumn(p Partition){
 		ns[uBucket]++
 	}
 
-	for bucketI,size := range ns{
-		fmt.Println(bucketI,size)
+	for bucketI, size := range ns {
+		fmt.Println(bucketI, size)
 	}
 }

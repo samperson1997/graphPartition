@@ -119,14 +119,14 @@ func (bdg *BDGImpl) deterministicGreedy() {
 	})
 
 	// ===== print blocks info ======
-	bdg.printBlocksInfo()
+	// bdg.printBlocksInfo()
 
 	// add bucket num of blocks into buckets firstly
 	for i := 0; i < int(bdg.bucketSize); i++ {
 		bdg.buckets[i].PushBack(bdg.blocks[i].id)
 	}
-	for i := int(bdg.bucketSize); i < len(bdg.blocks); i++ {
-		block := bdg.blocks[i]
+	for k := int(bdg.bucketSize); k < len(bdg.blocks); k++ {
+		block := bdg.blocks[k]
 		var bset = make(map[uint64]bool)
 		for nbr := range block.nbrlist {
 			// add nodes in nbr block into bset
@@ -134,11 +134,11 @@ func (bdg *BDGImpl) deterministicGreedy() {
 				bset[node.Value.(uint64)] = true
 			}
 		}
-		j := 0.0
+		j := 0
+		tmp := 0.0
 		for i := 0; i < len(bdg.buckets); i++ {
-			blocksInWorker := bdg.buckets[i]
 			var pset = make(map[uint64]bool)
-			for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
+			for blockInWorker := bdg.buckets[i].Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
 				// add nodes in block in worker into pset
 				for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
 					pset[node.Value.(uint64)] = true
@@ -151,9 +151,11 @@ func (bdg *BDGImpl) deterministicGreedy() {
 					retainSize++
 				}
 			}
-			j = math.Max(j, float64(retainSize)*(1-float64(len(pset))/capacity))
+			if float64(retainSize)*(1-float64(len(pset))/capacity) > tmp {
+				j = i
+			}
 		}
-		bdg.buckets[int(j)].PushBack(block.id)
+		bdg.buckets[j].PushBack(block.id)
 	}
 }
 
@@ -180,8 +182,7 @@ func (bdg *BDGImpl) Calc() {
 
 func (bdg *BDGImpl) AfterCalc() {
 	for i := range bdg.buckets {
-		blocksInWorker := bdg.buckets[i]
-		for blockInWorker := blocksInWorker.Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
+		for blockInWorker := bdg.buckets[i].Front(); blockInWorker != nil; blockInWorker = blockInWorker.Next() {
 			for node := bdg.blocks[blockInWorker.Value.(uint64)].nodes.Front(); node != nil; node = node.Next() {
 				bdg.vertex2Bucket[node.Value.(uint64)] = uint64(i)
 			}

@@ -196,6 +196,11 @@ func (bdg *BDGImpl) GetBucketFromId(id uint64) uint64 {
 	}
 	return bdg.vertex2Bucket[id]
 }
+
 func (bdg *BDGImpl) GetGraph() *Graph {
 	return bdg.graph
+}
+
+func (bdg *BDGImpl) GetBucketSize() uint64 {
+	return bdg.bucketSize
 }

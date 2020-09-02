@@ -357,7 +357,9 @@ func (shp *SHPImpl) GetBucketFromId(id uint64) uint64 {
 func (shp *SHPImpl) GetGraph() *common.Graph {
 	return shp.graph
 }
-
+func (shp *SHPImpl)GetBucketSize()uint64{
+	return shp.bucketSize
+}
 func (shp *SHPImpl) AfterCalc() {
 
 }

@@ -39,7 +39,10 @@ func TestFanout(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	shpFanout := partition.CalcFanout(shpImpl)
-	fmt.Printf("result fanout shpfanout : %d bdg fanout: %d\n", shpFanout, bdgFanout)
+	fmt.Println(graph.GetVertexSize())
+	fmt.Printf("result fanout shpfanout : %f\n, bdg fanout: %f\n",
+		float64(shpFanout)/float64(graph.GetVertexSize()),
+		float64(bdgFanout)/float64(graph.GetVertexSize()))
 }
 
 func TestBucketBalance(t *testing.T) {

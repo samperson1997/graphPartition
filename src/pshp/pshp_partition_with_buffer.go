@@ -1,7 +1,6 @@
 package pshp
 
 import (
-	"fmt"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -76,7 +75,7 @@ func (shp *SHPImpl) ComputMoveGainWithBufferParallel() {
 		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
-	fmt.Println(shp.tf.bufferSize)
+	// fmt.Println(shp.tf.bufferSize)
 }
 
 // ComputMoveGainWithBuffer compute maxgain of each vertex

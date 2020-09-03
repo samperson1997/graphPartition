@@ -2,16 +2,13 @@ package main
 
 import (
 	"fmt"
-
 	pt "gpartition/pshp"
-
-
 )
 
 func main() {
 
-	config,err := pt.LoadGraph("test_data/lj.in", 5, 0.5)
-	if err != nil{
+	config, err := pt.LoadGraph("test_data/youtube.in", 5, 0.5)
+	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}

@@ -22,10 +22,11 @@ func NewPartition(c Config) (Partition, error) {
 	case BdgPartitionType:
 		{
 			return bdg.NewBDGImpl(bdg.BDGConfig{
-				VertexSize: c.VertexSize,
-				BlockSize:  c.BlockSize,
-				BucketSize: c.BucketSize,
-				Graph:      c.Graph,
+				VertexSize:  c.VertexSize,
+				SrcNodesNum: c.SrcNodesNum,
+				BucketSize:  c.BucketSize,
+				Graph:       c.Graph,
+				StepNum:     c.StepNum,
 			}), nil
 		}
 	case ShpPartitionType:
@@ -52,7 +53,6 @@ func calcSingleFanout(vertex uint64, graph *common.Graph, p Partition) (fanout i
 
 	return
 }
-
 
 // CalcFanout for test
 // partition is not calced

@@ -11,7 +11,7 @@ import (
 )
 
 func TestFanout(t *testing.T) {
-	config := LoadGraphForBDG("../data.in", 3, 6)
+	config := LoadGraphForBDG("../test_data/youtube.in", 5, 1000)
 
 	bdg := NewBDGImpl(config)
 	bdg.bfs()
@@ -23,6 +23,17 @@ func TestFanout(t *testing.T) {
 			fmt.Print(block.Value.(uint64), ",")
 		}
 		fmt.Println()
+	}
+
+	// cal balance
+	bdg.AfterCalc()
+	ns := make([]int, bdg.GetBucketSize())
+	for vertex := uint64(0); vertex < bdg.graph.GetVertexSize(); vertex++ {
+		uBucket := bdg.GetBucketFromId(vertex)
+		ns[uBucket]++
+	}
+	for bucketI, size := range ns {
+		fmt.Println(bucketI, ":", size)
 	}
 }
 
@@ -58,6 +69,7 @@ func LoadGraphForBDG(path string, bucketSize int, blockSize int) (c BDGConfig) {
 	}
 	fmt.Println("load data from ", path, "vertex:", c.VertexSize, "edge:", edgeSize)
 	c.BucketSize = uint64(bucketSize)
-	c.BlockSize = uint64(blockSize)
+	c.SrcNodesNum = uint64(blockSize)
+	c.StepNum = 10000
 	return
 }

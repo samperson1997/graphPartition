@@ -24,7 +24,8 @@ func TestFanout(t *testing.T) {
 		// for shp
 		Prob: 0.5,
 		// for bdg
-		BlockSize: 10,
+		SrcNodesNum: 1000,
+		StepNum:     10000,
 	}
 	shpConfig := bdgConfig
 	shpConfig.PartitionType = partition.ShpPartitionType
@@ -54,7 +55,8 @@ func TestBucketBalance(t *testing.T) {
 		// for shp
 		Prob: 0.5,
 		// for bdg
-		BlockSize: 10,
+		SrcNodesNum: 1000,
+		StepNum:     10000,
 	}
 	shpConfig := bdgConfig
 	shpConfig.PartitionType = partition.ShpPartitionType

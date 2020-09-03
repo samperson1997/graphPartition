@@ -11,10 +11,11 @@ import (
 )
 
 type BDGConfig struct {
-	VertexSize uint64
-	BlockSize  uint64
-	BucketSize uint64
-	Graph      *Graph
+	VertexSize  uint64
+	SrcNodesNum uint64
+	StepNum     uint64
+	BucketSize  uint64
+	Graph       *Graph
 }
 
 type Block struct {
@@ -25,9 +26,10 @@ type Block struct {
 
 // BDGImpl calc BDG partition
 type BDGImpl struct {
-	blockSize  uint64
-	vertexSize uint64
-	bucketSize uint64
+	srcNodesNum uint64
+	stepNum     uint64
+	vertexSize  uint64
+	bucketSize  uint64
 
 	blocks  []*Block
 	buckets []*list.List
@@ -55,10 +57,11 @@ func (block *Block) addBlockNbr(id uint64) {
 func NewBDGImpl(c BDGConfig) *BDGImpl {
 	bdg := BDGImpl{
 		graph:         c.Graph,
-		blockSize:     c.BlockSize,
+		srcNodesNum:   c.SrcNodesNum,
+		stepNum:       c.StepNum,
 		vertexSize:    c.VertexSize,
 		bucketSize:    c.BucketSize,
-		blocks:        make([]*Block, c.BlockSize),
+		blocks:        make([]*Block, c.SrcNodesNum),
 		buckets:       make([]*list.List, c.BucketSize),
 		vertex2Bucket: make([]uint64, c.VertexSize),
 	}
@@ -72,39 +75,51 @@ func NewBDGImpl(c BDGConfig) *BDGImpl {
 
 // bfs cut an input graph into fine-grained blocks
 func (bdg *BDGImpl) bfs() {
-	var queue = list.New()
-	queue.Init()
-
-	chosenSrc := make(map[uint64]bool, bdg.blockSize)
-
-	// add random source nodes to blocks and change color
-	for i := uint64(0); i < bdg.blockSize; i++ {
-		rand.Seed(time.Now().UnixNano())
-		srcId := uint64(rand.Intn(int(bdg.vertexSize)))
-		_, ok := chosenSrc[srcId]
-		if ok {
-			i--
-			continue
-		}
-		chosenSrc[srcId] = true
-		queue.PushBack(srcId)
-		bdg.graph.ChangeColor(srcId, i)
-		bdg.blocks[i] = NewBlock(i)
-		bdg.blocks[i].nodes.PushBack(srcId)
-	}
-
 	g := bdg.graph.Nodes
-	for node := queue.Front(); node != nil && queue.Len() > 0; node = node.Next() {
-		color := g[node.Value.(uint64)].Color
-		for _, nbrNode := range g[node.Value.(uint64)].Nbrlist {
-			if g[nbrNode].Color == math.MaxUint64 {
-				g[nbrNode].Color = color
-				// add neighbor node into block
-				bdg.blocks[color].nodes.PushBack(nbrNode)
-				queue.PushBack(nbrNode)
-			} else if g[nbrNode].Color != color {
-				bdg.blocks[color].addBlockNbr(g[nbrNode].Color)
+	nodesToVisit := bdg.vertexSize
+
+	for nodesToVisit > 0 {
+		var queue = list.New()
+		queue.Init()
+		chosenSrc := make(map[uint64]bool, bdg.srcNodesNum)
+
+		// add random source nodes to blocks and change color
+		for i := uint64(0); i < bdg.srcNodesNum && nodesToVisit > bdg.srcNodesNum; i++ {
+			rand.Seed(time.Now().UnixNano())
+			srcId := uint64(rand.Intn(int(bdg.vertexSize)))
+			_, ok := chosenSrc[srcId]
+			if ok || g[srcId].Color != math.MaxUint64 {
+				i--
+				continue
 			}
+			chosenSrc[srcId] = true
+			queue.PushBack(srcId)
+			bdg.graph.ChangeColor(srcId, i)
+			if bdg.blocks[i] == nil {
+				bdg.blocks[i] = NewBlock(i)
+			}
+			bdg.blocks[i].nodes.PushBack(srcId)
+			nodesToVisit--
+		}
+		if nodesToVisit == bdg.srcNodesNum {
+			break
+		}
+
+		step := uint64(0)
+		for node := queue.Front(); node != nil && queue.Len() > 0 && step < bdg.stepNum; node = node.Next() {
+			color := g[node.Value.(uint64)].Color
+			for _, nbrNode := range g[node.Value.(uint64)].Nbrlist {
+				if g[nbrNode].Color == math.MaxUint64 {
+					g[nbrNode].Color = color
+					// add neighbor node into block
+					bdg.blocks[color].nodes.PushBack(nbrNode)
+					queue.PushBack(nbrNode)
+					nodesToVisit--
+				} else if g[nbrNode].Color != color {
+					bdg.blocks[color].addBlockNbr(g[nbrNode].Color)
+				}
+			}
+			step++
 		}
 	}
 }

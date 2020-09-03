@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	graph, _ := common.LoadGraphFromPath("../test_data/youtube.in")
+	fmt.Println("start")
+	graph, _ := common.LoadGraphFromPath("test_data/youtube.in")
 	bdgConfig := partition.Config{
 		PartitionType: partition.BdgPartitionType,
 		Graph:         graph,

@@ -134,7 +134,7 @@ func (bdg *BDGImpl) deterministicGreedy() {
 	})
 
 	// ===== print blocks info ======
-	bdg.printBlocksInfo()
+	// bdg.printBlocksInfo()
 
 	// add bucket num of blocks into buckets firstly
 	for i := 0; i < int(bdg.bucketSize); i++ {

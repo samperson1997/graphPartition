@@ -332,12 +332,14 @@ func NextIteration(shp *SHPImpl) bool {
 }
 
 // NextIterationParallel process a iteration with a iteration
-func NextIterationParallel(shp *SHPImpl) bool {
+func NextIterationParallel(shp *SHPImpl)(ret bool){
 	log.Println("[process new NextIterationParallel]")
 	shp.PreComputeBucket()
 	shp.ComputMoveGainParallel()
 	shp.ComputMoveProb()
-	return shp.SetNewParallel()
+	ret =  shp.SetNewParallel()
+	log.Println("[process end NextIterationParallel]")
+	return
 }
 
 // Calc calc all

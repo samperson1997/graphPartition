@@ -61,6 +61,7 @@ func NewBDGImpl(c BDGConfig) *BDGImpl {
 		stepNum:       c.StepNum,
 		vertexSize:    c.VertexSize,
 		bucketSize:    c.BucketSize,
+		blocks:        make([]*Block, c.SrcNodesNum),
 		buckets:       make([]*list.List, c.BucketSize),
 		vertex2Bucket: make([]uint64, c.VertexSize),
 	}
@@ -76,7 +77,6 @@ func NewBDGImpl(c BDGConfig) *BDGImpl {
 func (bdg *BDGImpl) bfs() {
 	g := bdg.graph.Nodes
 	nodesToVisit := bdg.vertexSize
-	itr := 0
 
 	for nodesToVisit > 0 {
 		var queue = list.New()
@@ -84,7 +84,7 @@ func (bdg *BDGImpl) bfs() {
 		chosenSrc := make(map[uint64]bool, bdg.srcNodesNum)
 
 		// add random source nodes to blocks and change color
-		for i := uint64(0); i < bdg.srcNodesNum; i++ {
+		for i := uint64(0); i < bdg.srcNodesNum && nodesToVisit > bdg.srcNodesNum; i++ {
 			rand.Seed(time.Now().UnixNano())
 			srcId := uint64(rand.Intn(int(bdg.vertexSize)))
 			_, ok := chosenSrc[srcId]
@@ -95,10 +95,14 @@ func (bdg *BDGImpl) bfs() {
 			chosenSrc[srcId] = true
 			queue.PushBack(srcId)
 			bdg.graph.ChangeColor(srcId, i)
-			blockId := uint64(itr)*bdg.srcNodesNum + i
-			bdg.blocks = append(bdg.blocks, NewBlock(blockId))
-			bdg.blocks[blockId].nodes.PushBack(srcId)
+			if bdg.blocks[i] == nil {
+				bdg.blocks[i] = NewBlock(i)
+			}
+			bdg.blocks[i].nodes.PushBack(srcId)
 			nodesToVisit--
+		}
+		if nodesToVisit == bdg.srcNodesNum {
+			break
 		}
 
 		step := uint64(0)
@@ -117,7 +121,6 @@ func (bdg *BDGImpl) bfs() {
 			}
 			step++
 		}
-		itr++
 	}
 }
 

@@ -26,6 +26,7 @@ func NewPartition(c Config) (Partition, error) {
 				SrcNodesNum: c.SrcNodesNum,
 				BucketSize:  c.BucketSize,
 				Graph:       c.Graph,
+				StepNum:     c.StepNum,
 			}), nil
 		}
 	case ShpPartitionType:

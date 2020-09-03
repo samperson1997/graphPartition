@@ -11,7 +11,7 @@ import (
 )
 
 func TestFanout(t *testing.T) {
-	config := LoadGraphForBDG("../data.in", 3, 3)
+	config := LoadGraphForBDG("../test_data/youtube.in", 5, 1000)
 
 	bdg := NewBDGImpl(config)
 	bdg.bfs()
@@ -70,6 +70,6 @@ func LoadGraphForBDG(path string, bucketSize int, blockSize int) (c BDGConfig) {
 	fmt.Println("load data from ", path, "vertex:", c.VertexSize, "edge:", edgeSize)
 	c.BucketSize = uint64(bucketSize)
 	c.SrcNodesNum = uint64(blockSize)
-	c.StepNum = 2
+	c.StepNum = 10000
 	return
 }

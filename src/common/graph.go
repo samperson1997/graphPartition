@@ -1,14 +1,13 @@
 package common
 
 import (
-	"math"
-	"fmt"
 	"bufio"
+	"fmt"
 	"io"
+	"math"
 	"os"
 	"strings"
 )
-
 
 // Graph manage Nodes
 type Graph struct {
@@ -20,8 +19,8 @@ type Graph struct {
 // NewGraph return a empty graph with vertexSize vertex
 func NewGraph(vertexSize uint64) *Graph {
 	g := Graph{
-		Nodes: make([]*Node, vertexSize),
-		vertexSize:vertexSize,
+		Nodes:      make([]*Node, vertexSize),
+		vertexSize: vertexSize,
 	}
 	for i := uint64(0); i < vertexSize; i++ {
 		g.Nodes[i] = NewNode(i)
@@ -29,8 +28,8 @@ func NewGraph(vertexSize uint64) *Graph {
 	return &g
 }
 
-// GetVertexSize return vertexsize 
-func (g *Graph) GetVertexSize()uint64{
+// GetVertexSize return vertexsize
+func (g *Graph) GetVertexSize() uint64 {
 	return g.vertexSize
 }
 
@@ -66,11 +65,11 @@ func (n *Node) addNbr(id uint64) {
 }
 
 // LoadGraphFromPath load a graph with path
-func LoadGraphFromPath(path string) (g *Graph,err error) {
+func LoadGraphFromPath(path string) (g *Graph, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Printf(err.Error())
-		return nil,err
+		return nil, err
 	}
 	defer file.Close()
 
@@ -79,7 +78,7 @@ func LoadGraphFromPath(path string) (g *Graph,err error) {
 	str, err := reader.ReadString('\n')
 	var vertexSize uint64
 	fmt.Fscanf(strings.NewReader(str), "%d", &vertexSize)
-	
+
 	g = NewGraph(vertexSize)
 	var src, dst uint64
 	edgeSize := 0
@@ -91,10 +90,10 @@ func LoadGraphFromPath(path string) (g *Graph,err error) {
 		edgeSize++
 		fmt.Fscanf(strings.NewReader(str), "%d %d", &src, &dst)
 		if src < 0 || src >= vertexSize || dst < 0 || dst >= vertexSize {
-			return nil,fmt.Errorf("err in edge with src: %d dst: %d vertexSize: %d",src,dst,vertexSize)
+			return nil, fmt.Errorf("err in edge with src: %d dst: %d vertexSize: %d", src, dst, vertexSize)
 		}
 		g.AddEdge(src, dst)
 		g.AddEdge(dst, src)
 	}
-	return g,nil
+	return g, nil
 }

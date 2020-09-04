@@ -10,8 +10,10 @@ type PartitionType int8
 const (
 	//BdgPartitionType type
 	BdgPartitionType PartitionType = iota
-	//ShpPartitionType simple type
+	//ShpPartitionType type
 	ShpPartitionType
+	//TShpPartitionType  type
+	TShpPartitionType
 )
 
 // Config all type of config

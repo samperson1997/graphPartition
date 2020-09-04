@@ -71,10 +71,10 @@ type SHPImpl struct {
 	graph *common.Graph
 
 	//for sort version
-	needTrans [][][]uint64
+	needTrans          [][][]uint64
 	mutexBucket2Bucket [][]sync.Mutex
-	gains [][]float64
-	toBeTransed []bool
+	gains              [][]float64
+	toBeTransed        []bool
 }
 
 // NewSHPImpl a new shpimpl with Config
@@ -178,7 +178,6 @@ func (shp *SHPImpl) ComputMoveGainParallel() {
 	wg.Wait()
 }
 
-
 // InitBucket set every vertex a init bucket
 func (shp *SHPImpl) InitBucket() {
 	for i := uint64(0); i < shp.vertexSize; i++ {
@@ -252,7 +251,6 @@ func (shp *SHPImpl) SetNewParallel() (ret bool) {
 		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
-	fmt.Println("setnew number :", number)
 	return isSet.Load().(bool)
 }
 
@@ -302,9 +300,9 @@ func (shp *SHPImpl) calcSingleFanout2(vertex uint64) (fanout float64) {
 			fanout++
 		}
 	}
-	if uint64(fanout) == 0  && uint64(fanout) != uint64(len(shp.graph.Nodes[vertex].Nbrlist)) {
+	if uint64(fanout) == 0 && uint64(fanout) != uint64(len(shp.graph.Nodes[vertex].Nbrlist)) {
 		fmt.Println("error shows!!!")
-	}	
+	}
 	return
 }
 func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
@@ -369,7 +367,7 @@ func (shp *SHPImpl) PreComputeBucketParallel() {
 			for vertex := begin; vertex != end; vertex++ {
 				shp.nbrBucket[vertex] = shp.computeBucketSingle(shp.graph.Nodes[vertex])
 			}
-		} (beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
+		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
 }
@@ -384,13 +382,11 @@ func NextIteration(shp *SHPImpl) bool {
 }
 
 // NextIterationParallel process a iteration with a iteration
-func NextIterationParallel(shp *SHPImpl)(ret bool){
-	log.Println("[process new NextIterationParallel]")
+func NextIterationParallel(shp *SHPImpl) (ret bool) {
 	shp.PreComputeBucket()
 	shp.ComputMoveGainParallel()
 	shp.ComputMoveProb()
-	ret =  shp.SetNewParallel()
-	log.Println("[process end NextIterationParallel]")
+	ret = shp.SetNewParallel()
 	return
 }
 
@@ -399,7 +395,6 @@ func (shp *SHPImpl) Calc() {
 	shp.InitBucket()
 	iter := 0
 	for NextIterationWithSortParallel(shp) && iter < 100 {
-		log.Println("?????", iter)
 		iter++
 	}
 }
@@ -413,7 +408,7 @@ func (shp *SHPImpl) GetBucketFromId(id uint64) uint64 {
 func (shp *SHPImpl) GetGraph() *common.Graph {
 	return shp.graph
 }
-func (shp *SHPImpl)GetBucketSize() uint64{
+func (shp *SHPImpl) GetBucketSize() uint64 {
 	return shp.bucketSize
 }
 func (shp *SHPImpl) AfterCalc() {

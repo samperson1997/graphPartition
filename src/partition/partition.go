@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gpartition/bdg"
 	"gpartition/common"
+	"gpartition/fshp"
 	"gpartition/pshp"
 )
 
@@ -32,6 +33,15 @@ func NewPartition(c Config) (Partition, error) {
 	case ShpPartitionType:
 		{
 			return pshp.NewSHPImpl(pshp.SHPConfig{
+				VertexSize: c.VertexSize,
+				Prob:       c.Prob,
+				BucketSize: c.BucketSize,
+				Graph:      c.Graph,
+			}), nil
+		}
+	case TShpPartitionType:
+		{
+			return fshp.NewFSHPImpl(fshp.FSHPConfig{
 				VertexSize: c.VertexSize,
 				Prob:       c.Prob,
 				BucketSize: c.BucketSize,

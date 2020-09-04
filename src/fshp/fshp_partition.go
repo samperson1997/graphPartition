@@ -30,7 +30,7 @@ type FSHPImpl struct {
 	nbrBucket [][]int32
 
 	probability [][]float64
-	vertexTrans [][]uint64
+	vertexTrans [][]int64
 
 	buffer     []uint64
 	buffer2    []uint64
@@ -71,13 +71,13 @@ func NewFSHPImpl(c FSHPConfig) *FSHPImpl {
 	fshp.notChangedVis = make([]bool, c.VertexSize)
 	fshp.notChanged = make([]uint64, c.VertexSize)
 	fshp.probability = make([][]float64, c.BucketSize)
-	fshp.vertexTrans = make([][]uint64, c.BucketSize)
+	fshp.vertexTrans = make([][]int64, c.BucketSize)
 	b := c.BucketSize
 	arena := make([]float64, b*b)
 	for i := range fshp.probability {
 		fshp.probability[i] = arena[i*int(b) : (i+1)*int(b)]
 	}
-	arena1 := make([]uint64, b*b)
+	arena1 := make([]int64, b*b)
 	for i := range fshp.vertexTrans {
 		fshp.vertexTrans[i] = arena1[i*int(b) : (i+1)*int(b)]
 	}
@@ -89,7 +89,7 @@ func (fshp *FSHPImpl) ComputMoveProb() {
 	for bucketI := 0; uint64(bucketI) < fshp.bucketSize; bucketI++ {
 		for bucketJ := 0; uint64(bucketJ) < fshp.bucketSize; bucketJ++ {
 			if fshp.vertexTrans[bucketI][bucketJ] != 0 {
-				fshp.probability[bucketI][bucketJ] = float64(min(fshp.vertexTrans[bucketI][bucketJ], fshp.vertexTrans[bucketJ][bucketI])) / float64(fshp.vertexTrans[bucketI][bucketJ])
+				fshp.probability[bucketI][bucketJ] = float64(imin(fshp.vertexTrans[bucketI][bucketJ], fshp.vertexTrans[bucketJ][bucketI])) / float64(fshp.vertexTrans[bucketI][bucketJ])
 			} else {
 				fshp.probability[bucketI][bucketJ] = 0
 			}

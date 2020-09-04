@@ -3,6 +3,8 @@ package fshp
 import (
 	"fmt"
 	"math/rand"
+	"runtime"
+	"sync"
 	"sync/atomic"
 )
 
@@ -66,9 +68,9 @@ func (fshp *FSHPImpl) NextIteration(iter int) (isChange bool) {
 	return
 }
 func (fshp *FSHPImpl) testf() bool {
-	var tmpVertexTrans [][]uint64
-	tmpVertexTrans = make([][]uint64, fshp.bucketSize)
-	arena1 := make([]uint64, fshp.bucketSize*fshp.bucketSize)
+	var tmpVertexTrans [][]int64
+	tmpVertexTrans = make([][]int64, fshp.bucketSize)
+	arena1 := make([]int64, fshp.bucketSize*fshp.bucketSize)
 
 	for i := range tmpVertexTrans {
 		tmpVertexTrans[i] = arena1[i*int(fshp.bucketSize) : (i+1)*int(fshp.bucketSize)]
@@ -91,9 +93,9 @@ func (fshp *FSHPImpl) testf() bool {
 	return true
 }
 func (fshp *FSHPImpl) testBucket() bool {
-	var tmpVertexTrans [][]uint64
-	tmpVertexTrans = make([][]uint64, fshp.bucketSize)
-	arena1 := make([]uint64, fshp.bucketSize*fshp.bucketSize)
+	var tmpVertexTrans [][]int64
+	tmpVertexTrans = make([][]int64, fshp.bucketSize)
+	arena1 := make([]int64, fshp.bucketSize*fshp.bucketSize)
 
 	for i := range tmpVertexTrans {
 		tmpVertexTrans[i] = arena1[i*int(fshp.bucketSize) : (i+1)*int(fshp.bucketSize)]
@@ -142,57 +144,71 @@ func (fshp *FSHPImpl) testIfAll() {
 
 // GetMayChangeVertexToBuffer check every vertex
 // and set them to buffer
-func (fshp *FSHPImpl) GetMayChangeVertexToBuffer() (ret bool) {
-	ret = false
+func (fshp *FSHPImpl) GetMayChangeVertexToBuffer() bool {
+	parallel := uint64(runtime.NumCPU())
+
+	var ret atomic.Value
+	ret.Store(false)
 	tp := int32(0)
 	fshp.notChangeSize = 0
+	segmentVertexSize := (uint64(fshp.bufferSize) + parallel - 1) / parallel
 
-	for i := 0; i < int(fshp.bufferSize); i++ {
-		vertex := fshp.buffer[i]
-		if fshp.vertex2Target[vertex] != fshp.vertex2Bucket[vertex] &&
-			rand.Float64() < fshp.probability[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]] {
-			stats := atomic.AddInt32(&tp, 1)
-			fshp.buffer2[stats-1] = vertex
-			fshp.notChangedVis[vertex] = false
-			ret = true
-		} else if fshp.vertex2Target[vertex] != fshp.vertex2Bucket[vertex] {
-			nstats := atomic.AddInt32(&fshp.notChangeSize, 1)
-			fshp.notChanged[nstats-1] = vertex
-			fshp.notChangedVis[vertex] = true
-		}
+	var wg sync.WaitGroup
+	for beginvertex := uint64(0); beginvertex < uint64(fshp.bufferSize); beginvertex += segmentVertexSize {
+		wg.Add(1)
+		go func(begin, end uint64) {
+			defer wg.Done()
+			for i := begin; i != end; i++ {
+				vertex := fshp.buffer[i]
+				if fshp.vertex2Target[vertex] != fshp.vertex2Bucket[vertex] &&
+					rand.Float64() < fshp.probability[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]] {
+					stats := atomic.AddInt32(&tp, 1)
+					fshp.buffer2[stats-1] = vertex
+					fshp.notChangedVis[vertex] = false
+					ret.Store(true)
+				} else if fshp.vertex2Target[vertex] != fshp.vertex2Bucket[vertex] {
+					nstats := atomic.AddInt32(&fshp.notChangeSize, 1)
+					fshp.notChanged[nstats-1] = vertex
+					fshp.notChangedVis[vertex] = true
+				}
+			}
+		}(beginvertex, min(beginvertex+segmentVertexSize, fshp.vertexSize))
 	}
+	wg.Wait()
 	fshp.buffer, fshp.buffer2 = fshp.buffer2, fshp.buffer
 	fshp.bufferSize = tp
-
-	return
+	return ret.Load().(bool)
 }
 
 // GetNbrBucketOfMayChangeVertexAndSetNewToBuffer defines
 // buffer shows the vertex which buckets **should** set to target
 func (fshp *FSHPImpl) GetNbrBucketOfMayChangeVertexAndSetNewToBuffer() {
 	tp := int32(0)
-	for i := int32(0); i < fshp.bufferSize; i++ {
-		vertex := fshp.buffer[i]
-		for _, nbrNode := range fshp.graph.Nodes[vertex].Nbrlist {
-			if atomic.CompareAndSwapInt32(&fshp.vis[nbrNode], 0, 1) {
-				stats := atomic.AddInt32(&tp, 1)
-				fshp.buffer2[stats-1] = nbrNode
+	parallel := uint64(runtime.NumCPU())
+
+	segmentVertexSize := (uint64(fshp.bufferSize) + parallel - 1) / parallel
+
+	var wg sync.WaitGroup
+	for beginvertex := uint64(0); beginvertex < uint64(fshp.bufferSize); beginvertex += segmentVertexSize {
+		wg.Add(1)
+		go func(begin, end uint64) {
+			defer wg.Done()
+			for i := begin; i != end; i++ {
+				vertex := fshp.buffer[i]
+				for _, nbrNode := range fshp.graph.Nodes[vertex].Nbrlist {
+					if atomic.CompareAndSwapInt32(&fshp.vis[nbrNode], 0, 1) {
+						stats := atomic.AddInt32(&tp, 1)
+						fshp.buffer2[stats-1] = nbrNode
+					}
+					atomic.AddInt32(&fshp.nbrBucket[nbrNode][fshp.vertex2Bucket[vertex]], -1)
+					atomic.AddInt32(&fshp.nbrBucket[nbrNode][fshp.vertex2Target[vertex]], 1)
+				}
+				atomic.AddInt64(&fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]], -1)
+				fshp.vertex2Bucket[vertex] = fshp.vertex2Target[vertex]
 			}
-			// ns := make([]int32, 5)
-			// for _, nbn := range fshp.graph.Nodes[nbrNode].Nbrlist {
-			// 	ns[fshp.vertex2Bucket[nbn]]++
-			// }
-			// for k, v := range ns {
-			// 	if v != fshp.nbrBucket[nbrNode][k] {
-			// 		fmt.Println("qwq", nbrNode, v, fshp.nbrBucket[nbrNode][k], fshp.vertex2Bucket[vertex], fshp.vertex2Target[vertex])
-			// 	}
-			// }
-			atomic.AddInt32(&fshp.nbrBucket[nbrNode][fshp.vertex2Bucket[vertex]], -1)
-			atomic.AddInt32(&fshp.nbrBucket[nbrNode][fshp.vertex2Target[vertex]], 1)
-		}
-		fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]]--
-		fshp.vertex2Bucket[vertex] = fshp.vertex2Target[vertex]
+		}(beginvertex, min(beginvertex+segmentVertexSize, fshp.vertexSize))
 	}
+	wg.Wait()
 	fshp.buffer, fshp.buffer2 = fshp.buffer2, fshp.buffer
 	fshp.bufferSize = tp
 }
@@ -200,16 +216,30 @@ func (fshp *FSHPImpl) GetNbrBucketOfMayChangeVertexAndSetNewToBuffer() {
 //
 func (fshp *FSHPImpl) GetNewChangeGainVertexsToBuffer() {
 	tp := int32(0)
-	for i := int32(0); i < fshp.bufferSize; i++ {
-		vertex := fshp.buffer[i]
-		for _, nbrNode := range fshp.graph.Nodes[vertex].Nbrlist {
-			if atomic.CompareAndSwapInt32(&fshp.vis1[nbrNode], 0, 1) {
-				stats := atomic.AddInt32(&tp, 1)
-				fshp.buffer2[stats-1] = nbrNode
+
+	parallel := uint64(runtime.NumCPU())
+
+	segmentVertexSize := (uint64(fshp.bufferSize) + parallel - 1) / parallel
+
+	var wg sync.WaitGroup
+	for beginvertex := uint64(0); beginvertex < uint64(fshp.bufferSize); beginvertex += segmentVertexSize {
+		wg.Add(1)
+		go func(begin, end uint64) {
+			defer wg.Done()
+			for i := begin; i != end; i++ {
+
+				vertex := fshp.buffer[i]
+				for _, nbrNode := range fshp.graph.Nodes[vertex].Nbrlist {
+					if atomic.CompareAndSwapInt32(&fshp.vis1[nbrNode], 0, 1) {
+						stats := atomic.AddInt32(&tp, 1)
+						fshp.buffer2[stats-1] = nbrNode
+					}
+				}
+				fshp.vis[vertex] = 0
 			}
-		}
-		fshp.vis[vertex] = 0
+		}(beginvertex, min(beginvertex+segmentVertexSize, fshp.vertexSize))
 	}
+	wg.Wait()
 	fshp.buffer, fshp.buffer2 = fshp.buffer2, fshp.buffer
 	fshp.bufferSize = tp
 
@@ -218,26 +248,39 @@ func (fshp *FSHPImpl) GetNewChangeGainVertexsToBuffer() {
 // ComputNewChangeMoveGainSubsetVertex c
 func (fshp *FSHPImpl) ComputNewChangeMoveGainSubsetVertex() {
 	tp := int32(0)
-	for i := int32(0); i < fshp.bufferSize; i++ {
-		vertex := fshp.buffer[i]
-		minGain, target := fshp.calcSingleGain(fshp.graph.Nodes[vertex])
-		if minGain < 0 {
-			fshp.notChangedVis[vertex] = false
-			stats := atomic.AddInt32(&tp, 1)
-			fshp.buffer2[stats-1] = vertex
-			fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]]--
-			fshp.vertexTrans[fshp.vertex2Bucket[vertex]][target]++
-			fshp.vertex2Target[vertex] = target
-		} else {
-			if fshp.notChangedVis[vertex] == true {
-				fshp.notChangedVis[vertex] = false
-			}
-			fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]]--
-			fshp.vertex2Target[vertex] = fshp.vertex2Bucket[vertex]
+	parallel := uint64(runtime.NumCPU())
 
-		}
-		fshp.vis1[vertex] = 0
+	segmentVertexSize := (uint64(fshp.bufferSize) + parallel - 1) / parallel
+
+	var wg sync.WaitGroup
+	for beginvertex := uint64(0); beginvertex < uint64(fshp.bufferSize); beginvertex += segmentVertexSize {
+		wg.Add(1)
+		go func(begin, end uint64) {
+			defer wg.Done()
+			for i := begin; i != end; i++ {
+
+				vertex := fshp.buffer[i]
+				minGain, target := fshp.calcSingleGain(fshp.graph.Nodes[vertex])
+				if minGain < 0 {
+					fshp.notChangedVis[vertex] = false
+					stats := atomic.AddInt32(&tp, 1)
+					fshp.buffer2[stats-1] = vertex
+					atomic.AddInt64(&fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]], -1)
+					atomic.AddInt64(&fshp.vertexTrans[fshp.vertex2Bucket[vertex]][target], 1)
+					fshp.vertex2Target[vertex] = target
+				} else {
+					if fshp.notChangedVis[vertex] == true {
+						fshp.notChangedVis[vertex] = false
+					}
+					atomic.AddInt64(&fshp.vertexTrans[fshp.vertex2Bucket[vertex]][fshp.vertex2Target[vertex]], -1)
+					fshp.vertex2Target[vertex] = fshp.vertex2Bucket[vertex]
+
+				}
+				fshp.vis1[vertex] = 0
+			}
+		}(beginvertex, min(beginvertex+segmentVertexSize, fshp.vertexSize))
 	}
+	wg.Wait()
 	fshp.buffer, fshp.buffer2 = fshp.buffer2, fshp.buffer
 	fshp.bufferSize = tp
 }

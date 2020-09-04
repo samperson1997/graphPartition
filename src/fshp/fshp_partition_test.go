@@ -28,14 +28,9 @@ func TestFShp(t *testing.T) {
 		will = fshpImpl.NextIteration(iter)
 		t2 := time.Now().UnixNano()
 		fmt.Println(t2 - t1)
+		fmt.Println("fanout:", fshpImpl.CalcFanout())
+		fshpImpl.GetEachBucketVolumn()
 		iter++
 
 	}
-	//	fmt.Printf("result fanout fshpfanout : %d\n", fshpFanout)
-
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	//	fshpFanout = partition.CalcFanout(fshpImpl)
-	//	fmt.Printf("result fanout fshpfanout : %d\n", fshpFanout)
 }

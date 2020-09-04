@@ -5,9 +5,10 @@ import (
 	"gpartition/common"
 	"gpartition/fshp"
 	"testing"
+	"time"
 )
 
-func TestFuckShp(t *testing.T) {
+func TestFShp(t *testing.T) {
 	graph, err := common.LoadGraphFromPath("../test_data/youtube.in")
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -16,17 +17,20 @@ func TestFuckShp(t *testing.T) {
 		Graph:      graph,
 		VertexSize: graph.GetVertexSize(),
 		BucketSize: 5,
-		// for shp
-		Prob: 0.5,
-		// for bdg
+		Prob:       0.5,
 	}
 	fshpImpl := fshp.NewFSHPImpl(fshpConfig)
-	for iter := 0; iter < 50; iter++ {
-		fshpImpl.NextIteration(iter)
-		fmt.Println("fanout :", fshpImpl.CalcFanout())
-		fshpImpl.GetEachBucketVolumn()
-	}
 
+	iter := 0
+	will := true
+	for will {
+		t1 := time.Now().UnixNano()
+		will = fshpImpl.NextIteration(iter)
+		t2 := time.Now().UnixNano()
+		fmt.Println(t2 - t1)
+		iter++
+
+	}
 	//	fmt.Printf("result fanout fshpfanout : %d\n", fshpFanout)
 
 	if err != nil {

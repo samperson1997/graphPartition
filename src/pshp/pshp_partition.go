@@ -69,6 +69,12 @@ type SHPImpl struct {
 	tf transferNeed
 	// graph manage all graph data
 	graph *common.Graph
+
+	//for sort version
+	needTrans [][][]uint64
+	mutexBucket2Bucket [][]sync.Mutex
+	gains [][]float64
+	toBeTransed []bool
 }
 
 // NewSHPImpl a new shpimpl with Config
@@ -95,7 +101,28 @@ func NewSHPImpl(c SHPConfig) *SHPImpl {
 		shp.vertexTrans[i] = arena1[i*int(b) : (i+1)*int(b)]
 	}
 	shp.nbrBucket = make([][]int, c.VertexSize)
+
+	//for sort
+	shp.needTrans = make([][][]uint64, c.BucketSize)
+	for i := range shp.needTrans {
+		shp.needTrans[i] = make([][]uint64, c.BucketSize)
+	}
+	shp.mutexBucket2Bucket = make([][]sync.Mutex, c.BucketSize)
+	for i := range shp.mutexBucket2Bucket {
+		shp.mutexBucket2Bucket[i] = make([]sync.Mutex, c.BucketSize)
+		fmt.Println(len(shp.mutexBucket2Bucket))
+		//need extra shp.mutexBucket2Bucket[i] = append(shp.mutexBucket2Bucket[i], mu)?????
+	}
+	shp.gains = make([][]float64, c.VertexSize)
+	for i := range shp.gains {
+		shp.gains[i] = make([]float64, c.BucketSize)
+	}
+	shp.toBeTransed = make([]bool, c.VertexSize)
 	return &shp
+}
+
+func (shp *SHPImpl) GetVertexSize() uint64 {
+	return shp.vertexSize
 }
 
 func (shp *SHPImpl) calcSingleGain(node *common.Node) (minGain float64, target uint64) {
@@ -150,6 +177,7 @@ func (shp *SHPImpl) ComputMoveGainParallel() {
 	}
 	wg.Wait()
 }
+
 
 // InitBucket set every vertex a init bucket
 func (shp *SHPImpl) InitBucket() {
@@ -262,6 +290,23 @@ func (shp *SHPImpl) calcSingleFanout(vertex uint64) (fanout float64) {
 	}
 	return
 }
+func (shp *SHPImpl) calcSingleFanout2(vertex uint64) (fanout float64) {
+	ns := make([]uint64, shp.bucketSize)
+	fanout = 0
+	for _, nbrNode := range shp.graph.Nodes[vertex].Nbrlist {
+		uBucket := shp.vertex2Bucket[nbrNode]
+		ns[uBucket]++
+	}
+	for bucketI := uint64(0); bucketI < shp.bucketSize; bucketI++ {
+		if ns[bucketI] > 0 {
+			fanout++
+		}
+	}
+	if uint64(fanout) == 0  && uint64(fanout) != uint64(len(shp.graph.Nodes[vertex].Nbrlist)) {
+		fmt.Println("error shows!!!")
+	}	
+	return
+}
 func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
 	ns := make([]uint64, shp.bucketSize)
 	fanout = 0
@@ -280,6 +325,13 @@ func (shp *SHPImpl) calcSinglepFanout(vertex uint64) (fanout float64) {
 func (shp *SHPImpl) CalcFanout() (fanout float64) {
 	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
 		fanout += shp.calcSingleFanout(vertex)
+	}
+	return
+}
+
+func (shp *SHPImpl) CalcFanout2() (fanout float64) {
+	for vertex := uint64(0); vertex < shp.vertexSize; vertex++ {
+		fanout += shp.calcSingleFanout2(vertex)
 	}
 	return
 }
@@ -317,7 +369,7 @@ func (shp *SHPImpl) PreComputeBucketParallel() {
 			for vertex := begin; vertex != end; vertex++ {
 				shp.nbrBucket[vertex] = shp.computeBucketSingle(shp.graph.Nodes[vertex])
 			}
-		}(beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
+		} (beginvertex, min(beginvertex+segmentVertexSize, shp.vertexSize))
 	}
 	wg.Wait()
 }
@@ -346,10 +398,12 @@ func NextIterationParallel(shp *SHPImpl)(ret bool){
 func (shp *SHPImpl) Calc() {
 	shp.InitBucket()
 	iter := 0
-	for NextIterationWithBufferParallel(shp) && iter < 100 {
+	for NextIterationWithSortParallel(shp) && iter < 100 {
+		log.Println("?????", iter)
 		iter++
 	}
 }
+
 func (shp *SHPImpl) GetBucketFromId(id uint64) uint64 {
 	if id > shp.vertexSize {
 		return math.MaxUint64
@@ -359,7 +413,7 @@ func (shp *SHPImpl) GetBucketFromId(id uint64) uint64 {
 func (shp *SHPImpl) GetGraph() *common.Graph {
 	return shp.graph
 }
-func (shp *SHPImpl)GetBucketSize()uint64{
+func (shp *SHPImpl)GetBucketSize() uint64{
 	return shp.bucketSize
 }
 func (shp *SHPImpl) AfterCalc() {

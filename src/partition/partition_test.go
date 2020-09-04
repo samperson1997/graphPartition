@@ -46,10 +46,12 @@ func TestFanout(t *testing.T) {
 }
 
 func TestBucketBalance(t *testing.T) {
+	fmt.Println("step1")
 	graph, err := common.LoadGraphFromPath("../test_data/youtube.in")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+	fmt.Println("step2")
 	bdgConfig := partition.Config{
 		PartitionType: partition.BdgPartitionType,
 		Graph:         graph,
@@ -61,17 +63,31 @@ func TestBucketBalance(t *testing.T) {
 		SrcNodesNum: 1000,
 		StepNum:     10000,
 	}
+
+	fmt.Println("step3")
 	shpConfig := bdgConfig
 	shpConfig.PartitionType = partition.ShpPartitionType
-	bdgImpl, err := partition.NewPartition(bdgConfig)
+
+	fmt.Println("step4")
+	// bdgImpl, err := partition.NewPartition(bdgConfig)
+
+	fmt.Println("step5")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	partition.GetEachBucketVolumn(bdgImpl)
+
+	fmt.Println("step6")
+	// partition.GetEachBucketVolumn(bdgImpl)
+
+	fmt.Println("step7")
 	shpImpl, err := partition.NewPartition(shpConfig)
+
+	fmt.Println("step8")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
+
+	fmt.Println("step9")
 	partition.GetEachBucketVolumn(shpImpl)
 
 }

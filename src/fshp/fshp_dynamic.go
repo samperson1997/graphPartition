@@ -10,11 +10,13 @@ import (
 
 func (fshp *FSHPImpl) Calc() {
 
+	will := true
 	iter := 0
-	for fshp.NextIteration(iter) {
+	for will {
+		will = fshp.NextIteration(iter)
 		iter++
-	}
 
+	}
 }
 
 // InitBucket set every vertex a init bucket

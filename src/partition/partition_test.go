@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gpartition/common"
 	"gpartition/partition"
+	"gpartition/pshp"
 	"testing"
 )
 
@@ -44,11 +45,21 @@ func TestFanout(t *testing.T) {
 	}
 	tshpFanout := partition.CalcFanout(fshpImpl)
 
+	burteConfig := shpConfig
+	tshpConfig.PartitionType = partition.ShpPartitionType
+	bruteforceImpl, err := partition.NewPartition(burteConfig)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	bruteforceImpl.(*pshp.SHPImpl).InitBucket()
+	bruteFanout := bruteforceImpl.(*pshp.SHPImpl).CalcFanout()
+
 	fmt.Println(graph.GetVertexSize())
-	fmt.Printf("result fanout shpfanout : %f\n, fshp fanout: %f, bdg fanout: %f\n",
+	fmt.Printf("result fanout shpfanout : %f\n, fshp fanout: %f, bdg fanout: %f brute force : %f\n",
 		float64(shpFanout)/float64(graph.GetVertexSize()),
 		float64(bdgFanout)/float64(graph.GetVertexSize()),
 		float64(tshpFanout)/float64(graph.GetVertexSize()),
+		float64(bruteFanout)/float64(graph.GetVertexSize()),
 	)
 }
 

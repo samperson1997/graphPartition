@@ -27,9 +27,7 @@ func TestFShp(t *testing.T) {
 		t1 := time.Now().UnixNano()
 		will = fshpImpl.NextIteration(iter)
 		t2 := time.Now().UnixNano()
-		fmt.Println(t2 - t1)
-		fmt.Println("fanout:", fshpImpl.CalcFanout())
-		fshpImpl.GetEachBucketVolumn()
+		fmt.Println(float64(t2-t1) / 1000000)
 		iter++
 
 	}

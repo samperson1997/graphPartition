@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	pt "gpartition/pshp"
+	"time"
 )
 
 func main() {
@@ -17,8 +18,12 @@ func main() {
 
 	fmt.Println(int(shp.CalcFanout()))
 	iter := 0
-	for pt.NextIterationParallel(shp) || iter < 500 {
-		fmt.Println("CalcFanout", int(shp.CalcFanout()))
+	will := true
+	for will {
+		t1 := time.Now().UnixNano()
+		will = pt.NextIterationParallel(shp)
+		t2 := time.Now().UnixNano()
+		fmt.Println(float64(t2-t1) / 1000000)
 		iter++
 	}
 

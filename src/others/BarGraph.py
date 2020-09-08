@@ -4,9 +4,9 @@ matplotlib.rcParams['font.sans-serif'] = ['SimHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 label_list = ['2', '5', '10']
-num_list1 = [1.72, 3.31, 5.11]
-num_list2 = [1.47, 2.78, 3.62]
-num_list3 = [1.38, 1.95, 1.49]
+num_list1 = [1.47, 2.24, 2.89]
+num_list2 = [1.45, 2.12, 2.71]
+num_list3 = [1.24, 1.69, 1.95]
 x = range(len(num_list1))
 x = [i * 1.5 for i in range(len(num_list1))]
 
